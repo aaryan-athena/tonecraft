@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToneCraft AI - Guitar Tone Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#06b6d4',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animate-gradient {
+            background-size: 200% 200%;
+            animation: gradient 15s ease infinite;
+        }
+        .knob-container {
+            transition: all 0.3s ease;
+        }
+        .knob-container:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Light theme styles */
+        body.light-theme {
+            background: linear-gradient(to bottom right, #f0f9ff, #dbeafe, #f0f9ff);
+            color: #1f2937;
+        }
+        body.light-theme .text-white { color: #ffffff; }
+        body.light-theme .text-gray-300 { color: #4b5563; }
+        body.light-theme .text-gray-400 { color: #6b7280; }
+        body.light-theme .text-gray-500 { color: #9ca3af; }
+        body.light-theme .bg-black { background-color: #ffffff; }
+        body.light-theme .bg-gray-800 { background-color: #f3f4f6; }
+        body.light-theme .bg-gray-900 { background-color: #ffffff; }
+        body.light-theme .border-blue-500 { border-color: #60a5fa; }
+        body.light-theme .placeholder-gray-500::placeholder { color: #9ca3af; }
+    </style>
+</head>
+<body class="light-theme bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 min-h-screen text-gray-900">
+    
+    <!-- Header -->
+    <header class="bg-white bg-opacity-80 backdrop-blur-lg border-b border-blue-200 shadow-sm">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="logoIcon" class="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                        ToneCraft AI
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">                    
+                    <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg transition-colors" title="Toggle theme">
+                        <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12">
+        
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h2 class="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-clip-text text-transparent">
+                AI-Powered Guitar Tone Generator
+            </h2>
+            <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                Describe your desired tone or upload an audio file, and let our AI generate the perfect guitar parameters
+            </p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="max-w-4xl mx-auto mb-12">
+            <div class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-blue-200 p-8 shadow-xl">
+                
+                <!-- Tab Selection -->
+                <div class="flex space-x-4 mb-6">
+                    <button id="textTab" class="flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg">
+                        Text Input
+                    </button>
+                    <button id="audioTab" class="flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200">
+                        Audio Upload
+                    </button>
+                </div>
+
+                <!-- Text Input Panel -->
+                <div id="textPanel" class="space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Describe Your Tone
+                    </label>
+                    <textarea 
+                        id="textInput" 
+                        rows="4" 
+                        class="w-full px-4 py-3 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400 resize-none"
+                        placeholder="e.g., heavy metal distortion, clean jazz tone, bluesy crunch..."
+                    ></textarea>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="setExample('heavy metal distortion')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
+                            Heavy Metal
+                        </button>
+                        <button onclick="setExample('clean jazz tone')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
+                            Clean Jazz
+                        </button>
+                        <button onclick="setExample('bluesy crunch')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
+                            Bluesy Crunch
+                        </button>
+                        <button onclick="setExample('ambient reverb')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
+                            Ambient Reverb
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Audio Upload Panel -->
+                <div id="audioPanel" class="hidden space-y-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Upload Audio File
+                    </label>
+                    <div class="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:border-blue-400 transition-all cursor-pointer bg-blue-50">
+                        <input type="file" id="audioInput" accept="audio/*" class="hidden" onchange="handleFileSelect(event)">
+                        <label for="audioInput" class="cursor-pointer">
+                            <svg class="w-12 h-12 mx-auto mb-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p class="text-gray-700 mb-2">Click to upload or drag and drop</p>
+                            <p class="text-sm text-gray-500">WAV, MP3, or any audio format</p>
+                        </label>
+                    </div>
+                    <div id="fileName" class="text-sm text-gray-600 text-center hidden"></div>
+                </div>
+
+                <!-- Generate Button -->
+                <button 
+                    id="generateBtn"
+                    onclick="generateTone()"
+                    class="w-full mt-6 py-4 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-blue-500/50 transform hover:scale-[1.02]"
+                >
+                    Generate Tone Parameters
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden text-center mb-8">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <p class="mt-4 text-gray-300">Processing with AI...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden max-w-6xl mx-auto">
+            
+            <!-- Tone Info Card -->
+            <div id="toneInfoCard" class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-blue-200 p-6 mb-8 shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2 text-gray-800">Detected Tone</h3>
+                        <p id="toneType" class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600 mb-1">Confidence</p>
+                        <p id="confidence" class="text-2xl font-bold text-green-500"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parameters Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="parametersGrid">
+                <!-- Parameters will be inserted here -->
+            </div>
+
+            <!-- Export Button -->
+            <div class="mt-8 text-center">
+                <button 
+                    id="exportBtn"
+                    onclick="exportParameters()"
+                    class="px-8 py-3 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg font-semibold transition-all duration-300 shadow-lg"
+                >
+                    Export as JSON
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 py-8 text-center text-gray-400 text-sm">
+        <p>ToneCraft AI &copy; 2025 | Powered by Machine Learning</p>
+    </footer>
+
+    <script>
+        let currentResults = null;
+        let selectedFile = null;
+        let isDarkTheme = false;
+
+        // Theme toggle
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            const body = document.body;
+            const sunIcon = document.getElementById('sunIcon');
+            const moonIcon = document.getElementById('moonIcon');
+            const themeToggle = document.getElementById('themeToggle');
+            const exportBtn = document.getElementById('exportBtn');
+            const logoIcon = document.getElementById('logoIcon');
+            
+            if (isDarkTheme) {
+                body.className = 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 min-h-screen text-white';
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+                sunIcon.className = 'w-5 h-5 text-yellow-300';
+                themeToggle.className = 'p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors';
+                logoIcon.className = 'w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center';
+                if (exportBtn) {
+                    exportBtn.className = 'px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg';
+                }
+            } else {
+                body.className = 'light-theme bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 min-h-screen text-gray-900';
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+                moonIcon.className = 'w-5 h-5 text-gray-700';
+                themeToggle.className = 'p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors';
+                logoIcon.className = 'w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center';
+                if (exportBtn) {
+                    exportBtn.className = 'px-8 py-3 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg font-semibold transition-all duration-300 shadow-lg';
+                }
+            }
+            
+            // Update header
+            const header = document.querySelector('header');
+            const headerSubtext = header.querySelector('.text-sm');
+            
+            if (isDarkTheme) {
+                header.className = 'bg-black bg-opacity-50 backdrop-blur-lg border-b border-blue-500 border-opacity-30';
+                headerSubtext.className = 'text-sm text-gray-400';
+            } else {
+                header.className = 'bg-white bg-opacity-80 backdrop-blur-lg border-b border-blue-200 shadow-sm';
+                headerSubtext.className = 'text-sm text-gray-600';
+            }
+            
+            localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                toggleTheme();
+            }
+        });
+
+        // Tab switching
+        document.getElementById('textTab').addEventListener('click', () => {
+            const activeClass = 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
+            const inactiveClass = isDarkTheme 
+                ? 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
+            
+            document.getElementById('textTab').className = activeClass;
+            document.getElementById('audioTab').className = inactiveClass;
+            document.getElementById('textPanel').classList.remove('hidden');
+            document.getElementById('audioPanel').classList.add('hidden');
+        });
+
+        document.getElementById('audioTab').addEventListener('click', () => {
+            const activeClass = 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
+            const inactiveClass = isDarkTheme 
+                ? 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
+            
+            document.getElementById('audioTab').className = activeClass;
+            document.getElementById('textTab').className = inactiveClass;
+            document.getElementById('audioPanel').classList.remove('hidden');
+            document.getElementById('textPanel').classList.add('hidden');
+        });
+
+        // Set example text
+        function setExample(text) {
+            document.getElementById('textInput').value = text;
+        }
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+                document.getElementById('fileName').classList.remove('hidden');
+            }
+        }
+
+        // Parameter ranges for denormalization display
+        const paramRanges = {
+            "chorusdepth": [0.0, 0.02],
+            "chorusmix": [0.0, 1.0],
+            "chorusrate": [0.1, 5.0],
+            "delayfeedback": [0.0, 0.95],
+            "delaymix": [0.0, 1.0],
+            "delaytime": [0.01, 2.0],
+            "distortiondrive": [0.0, 1.0],
+            "distortiontone": [0.0, 1.0],
+            "eqbass": [-12.0, 12.0],
+            "eqmid": [-12.0, 12.0],
+            "eqtreble": [-12.0, 12.0],
+            "mastervolume": [-20.0, 20.0],
+            "overdrivedrive": [0.0, 1.0],
+            "reverbdamp": [0.0, 1.0],
+            "reverbsize": [0.0, 5.0],
+            "reverbt60": [0.1, 60.0],
+            "reverbwet": [0.0, 1.0]
+        };
+
+        // Calculate percentage
+        function calculatePercentage(value, paramName) {
+            const [min, max] = paramRanges[paramName];
+            return ((value - min) / (max - min) * 100).toFixed(1);
+        }
+
+        // Format parameter name for display
+        function formatParamName(name) {
+            return name.replace(/([A-Z])/g, ' $1')
+                      .replace(/^./, str => str.toUpperCase())
+                      .trim();
+        }
+
+        // Get category color
+        function getCategoryColor(paramName) {
+            if (paramName.includes('distortion') || paramName.includes('overdrive')) {
+                return 'from-red-500 to-orange-500';
+            } else if (paramName.includes('eq')) {
+                return 'from-blue-500 to-cyan-500';
+            } else if (paramName.includes('reverb')) {
+                return 'from-purple-500 to-pink-500';
+            } else if (paramName.includes('delay')) {
+                return 'from-green-500 to-teal-500';
+            } else if (paramName.includes('chorus')) {
+                return 'from-yellow-500 to-amber-500';
+            } else {
+                return 'from-indigo-500 to-purple-500';
+            }
+        }
+
+        // Generate tone parameters
+        async function generateTone() {
+            const textInput = document.getElementById('textInput').value.trim();
+            const isTextMode = !document.getElementById('textPanel').classList.contains('hidden');
+
+            if (isTextMode && !textInput) {
+                alert('Please enter a tone description');
+                return;
+            }
+
+            if (!isTextMode && !selectedFile) {
+                alert('Please select an audio file');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                let response;
+
+                if (isTextMode) {
+                    // Text input mode
+                    response = await fetch('http://127.0.0.1:5000/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ text_input: textInput })
+                    });
+                } else {
+                    // Audio upload mode
+                    const formData = new FormData();
+                    formData.append('audio', selectedFile);
+                    
+                    response = await fetch('http://127.0.0.1:5000/predict_audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+                    throw new Error(errorData.error || `Server returned ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentResults = data;
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                const errorMsg = isTextMode 
+                    ? 'Failed to generate tone parameters. Make sure the Flask server is running on http://127.0.0.1:5000'
+                    : 'Failed to process audio file. Error: ' + error.message;
+                alert(errorMsg);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            if (!data.PARAMETERS || data.PARAMETERS.length === 0) {
+                alert('No parameters received from server');
+                return;
+            }
+
+            // Show results section
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Set tone type and confidence (if available from server)
+            const toneTypeEl = document.getElementById('toneType');
+            const confidenceEl = document.getElementById('confidence');
+            
+            // For now, we'll extract this from the response or set defaults
+            // The server doesn't currently return tone_type and confidence in the response
+            // So we'll set placeholder values
+            toneTypeEl.textContent = data.tone_type || 'Custom Tone';
+            confidenceEl.textContent = data.confidence ? `${(data.confidence * 100).toFixed(1)}%` : 'N/A';
+            
+            // Update tone info card theme
+            const toneInfoCard = document.getElementById('toneInfoCard');
+            if (isDarkTheme) {
+                toneInfoCard.className = 'bg-black bg-opacity-40 backdrop-blur-xl rounded-2xl border border-blue-500 border-opacity-30 p-6 mb-8 shadow-2xl';
+                toneInfoCard.querySelector('h3').className = 'text-2xl font-bold mb-2 text-gray-200';
+                toneInfoCard.querySelectorAll('.text-sm')[0].className = 'text-sm text-gray-400 mb-1';
+            } else {
+                toneInfoCard.className = 'bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-blue-200 p-6 mb-8 shadow-xl';
+                toneInfoCard.querySelector('h3').className = 'text-2xl font-bold mb-2 text-gray-800';
+                toneInfoCard.querySelectorAll('.text-sm')[0].className = 'text-sm text-gray-600 mb-1';
+            }
+
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Display parameters
+            const grid = document.getElementById('parametersGrid');
+            grid.innerHTML = '';
+
+            data.PARAMETERS.forEach(param => {
+                const percentage = calculatePercentage(param.value, param.name);
+                const displayName = formatParamName(param.name);
+                const colorClass = getCategoryColor(param.name);
+                const [min, max] = paramRanges[param.name];
+
+                const card = document.createElement('div');
+                const cardBg = isDarkTheme 
+                    ? 'knob-container bg-black bg-opacity-40 backdrop-blur-xl rounded-xl border border-blue-500 border-opacity-30 p-6 shadow-xl'
+                    : 'knob-container bg-white bg-opacity-90 backdrop-blur-xl rounded-xl border border-blue-200 p-6 shadow-lg';
+                card.className = cardBg;
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold ${isDarkTheme ? 'text-gray-200' : 'text-gray-800'}">${displayName}</h4>
+                        <span class="text-xs px-2 py-1 bg-gradient-to-r ${colorClass} rounded-full text-white font-medium">
+                            ${percentage}%
+                        </span>
+                    </div>
+                    <div class="mb-3">
+                        <div class="w-full ${isDarkTheme ? 'bg-gray-800' : 'bg-gray-200'} rounded-full h-2 overflow-hidden">
+                            <div class="bg-gradient-to-r ${colorClass} h-2 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}">Value:</span>
+                        <span class="font-mono ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}">${param.value.toFixed(4)}</span>
+                    </div>
+                    <div class="flex justify-between text-xs ${isDarkTheme ? 'text-gray-500' : 'text-gray-500'} mt-1">
+                        <span>Min: ${min}</span>
+                        <span>Max: ${max}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Export parameters as JSON
+        function exportParameters() {
+            if (!currentResults) return;
+
+            const dataStr = JSON.stringify(currentResults, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'tone-parameters.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
