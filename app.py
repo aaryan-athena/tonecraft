@@ -168,9 +168,14 @@ def predict_audio():
 # --- Main Server Logic ---
 def main():
     print("Starting AI Tone Crafting Server (Flask)...")
-    # host='127.0.0.1' makes the server only accessible from the local machine
-    # port=5000 is the standard port for Flask development
-    app.run(host='127.0.0.1', port=5000)
+    # Get port from environment variable (required for Render deployment)
+    # Default to 5000 for local development
+    port = int(os.environ.get('PORT', 5000))
+    # Use 0.0.0.0 to make server accessible externally (required for Render)
+    # Use 127.0.0.1 for local development only
+    host = '0.0.0.0' if os.environ.get('PORT') else '127.0.0.1'
+    print(f"Server running on {host}:{port}")
+    app.run(host=host, port=port)
 
 if __name__ == "__main__":
     main()
