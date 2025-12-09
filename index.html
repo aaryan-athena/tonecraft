@@ -386,7 +386,7 @@
 
                 if (isTextMode) {
                     // Text input mode
-                    response = await fetch('http://127.0.0.1:5000/predict', {
+                    response = await fetch('/predict', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -398,7 +398,7 @@
                     const formData = new FormData();
                     formData.append('audio', selectedFile);
                     
-                    response = await fetch('http://127.0.0.1:5000/predict_audio', {
+                    response = await fetch('/predict_audio', {
                         method: 'POST',
                         body: formData
                     });
@@ -416,7 +416,7 @@
             } catch (error) {
                 console.error('Error:', error);
                 const errorMsg = isTextMode 
-                    ? 'Failed to generate tone parameters. Make sure the Flask server is running on http://127.0.0.1:5000'
+                    ? 'Failed to generate tone parameters. Please check your internet connection and try again.'
                     : 'Failed to process audio file. Error: ' + error.message;
                 alert(errorMsg);
             } finally {
