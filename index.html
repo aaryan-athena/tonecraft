@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToneCraft AI - Guitar Tone Generator</title>
+    <title>ToneCraft AI - Guitar Tone Generator & StemFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -66,7 +66,16 @@
                         ToneCraft AI
                     </h1>
                 </div>
-                <div class="flex items-center space-x-4">                    
+                <div class="flex items-center space-x-4">
+                    <!-- Navigation Tabs -->
+                    <nav class="flex space-x-2">
+                        <button id="navTonecraft" onclick="showPage('tonecraft')" class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg">
+                            ToneCraft
+                        </button>
+                        <button id="navStemflow" onclick="showPage('stemflow')" class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200">
+                            StemFlow
+                        </button>
+                    </nav>
                     <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg transition-colors" title="Toggle theme">
                         <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -82,6 +91,9 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-6 py-12">
+
+        <!-- ==================== TONECRAFT PAGE ==================== -->
+        <div id="tonecraftPage">
         
         <!-- Hero Section -->
         <div class="text-center mb-12">
@@ -203,17 +215,146 @@
             </div>
         </div>
 
+        </div> <!-- End of ToneCraft Page -->
+
+        <!-- ==================== STEMFLOW PAGE ==================== -->
+        <div id="stemflowPage" class="hidden">
+            
+            <!-- StemFlow Hero Section -->
+            <div class="text-center mb-12">
+                <h2 class="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                    StemFlow - Music Demixing
+                </h2>
+                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                    Separate your music into individual stems (vocals, drums, bass, other) using AI-powered deep learning
+                </p>
+            </div>
+
+            <!-- StemFlow Upload Section -->
+            <div class="max-w-4xl mx-auto mb-12">
+                <div class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-purple-200 p-8 shadow-xl">
+                    
+                    <label class="block text-sm font-medium text-gray-700 mb-4">
+                        Upload Audio File for Stem Separation
+                    </label>
+                    
+                    <div class="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center hover:border-purple-400 transition-all cursor-pointer bg-purple-50" id="stemDropZone">
+                        <input type="file" id="stemAudioInput" accept="audio/*" class="hidden" onchange="handleStemFileSelect(event)">
+                        <label for="stemAudioInput" class="cursor-pointer">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                            </svg>
+                            <p class="text-gray-700 mb-2 text-lg">Click to upload or drag and drop</p>
+                            <p class="text-sm text-gray-500">MP3, WAV, FLAC, or any audio format</p>
+                        </label>
+                    </div>
+                    <div id="stemFileName" class="text-sm text-gray-600 text-center mt-4 hidden"></div>
+
+                    <!-- Separate Button -->
+                    <button 
+                        id="separateBtn"
+                        onclick="separateStems()"
+                        class="w-full mt-6 py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02]"
+                    >
+                        Separate into Stems
+                    </button>
+
+                    <!-- Info Card -->
+                    <div class="mt-6 p-4 bg-purple-100 rounded-lg">
+                        <h4 class="font-semibold text-purple-800 mb-2">About StemFlow</h4>
+                        <p class="text-sm text-purple-700">
+                            StemFlow uses <strong>Demucs</strong>, a state-of-the-art deep learning model developed by Meta AI, 
+                            to separate music into 4 stems: <strong>Drums</strong>, <strong>Bass</strong>, <strong>Other</strong> (instruments), and <strong>Vocals</strong>.
+                            Processing may take a few minutes depending on the audio length.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- StemFlow Loading Indicator -->
+            <div id="stemLoading" class="hidden text-center mb-8">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                <p class="mt-4 text-gray-300">AI is processing your audio. This may take a while...</p>
+                <p class="text-sm text-gray-400 mt-2">Separating into drums, bass, other, and vocals...</p>
+            </div>
+
+            <!-- StemFlow Results Section -->
+            <div id="stemResults" class="hidden max-w-4xl mx-auto">
+                
+                <!-- Success Card -->
+                <div class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-green-200 p-6 mb-8 shadow-xl">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Separation Complete!</h3>
+                            <p id="stemOriginalFile" class="text-gray-600">Your audio has been separated into 4 stems</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stems Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="stemsGrid">
+                    <!-- Stems will be inserted here -->
+                </div>
+
+                <!-- Download All Button -->
+                <div class="mt-8 text-center">
+                    <button 
+                        id="downloadAllBtn"
+                        onclick="downloadAllStems()"
+                        class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg"
+                    >
+                        Download All Stems (ZIP)
+                    </button>
+                </div>
+            </div>
+
+        </div> <!-- End of StemFlow Page -->
+
     </main>
 
     <!-- Footer -->
     <footer class="mt-20 py-8 text-center text-gray-400 text-sm">
-        <p>ToneCraft AI &copy; 2025 | Powered by Machine Learning</p>
+        <p>ToneCraft AI & StemFlow &copy; 2025 | Powered by Machine Learning</p>
     </footer>
 
     <script>
         let currentResults = null;
         let selectedFile = null;
         let isDarkTheme = false;
+        
+        // StemFlow variables
+        let selectedStemFile = null;
+        let currentStemResults = null;
+
+        // Page Navigation
+        function showPage(page) {
+            const tonecraftPage = document.getElementById('tonecraftPage');
+            const stemflowPage = document.getElementById('stemflowPage');
+            const navTonecraft = document.getElementById('navTonecraft');
+            const navStemflow = document.getElementById('navStemflow');
+            
+            const activeNavClass = 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
+            const inactiveNavClass = isDarkTheme 
+                ? 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
+            
+            if (page === 'tonecraft') {
+                tonecraftPage.classList.remove('hidden');
+                stemflowPage.classList.add('hidden');
+                navTonecraft.className = activeNavClass;
+                navStemflow.className = inactiveNavClass;
+            } else if (page === 'stemflow') {
+                tonecraftPage.classList.add('hidden');
+                stemflowPage.classList.remove('hidden');
+                navStemflow.className = activeNavClass;
+                navTonecraft.className = inactiveNavClass;
+            }
+        }
 
         // Theme toggle
         function toggleTheme() {
@@ -253,11 +394,14 @@
             
             if (isDarkTheme) {
                 header.className = 'bg-black bg-opacity-50 backdrop-blur-lg border-b border-blue-500 border-opacity-30';
-                headerSubtext.className = 'text-sm text-gray-400';
+                if (headerSubtext) headerSubtext.className = 'text-sm text-gray-400';
             } else {
                 header.className = 'bg-white bg-opacity-80 backdrop-blur-lg border-b border-blue-200 shadow-sm';
-                headerSubtext.className = 'text-sm text-gray-600';
+                if (headerSubtext) headerSubtext.className = 'text-sm text-gray-600';
             }
+            
+            // Update navigation styling
+            updateNavStyling();
             
             localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
         }
@@ -512,6 +656,215 @@
             link.download = 'tone-parameters.json';
             link.click();
             URL.revokeObjectURL(url);
+        }
+
+        // ==================== STEMFLOW FUNCTIONS ====================
+
+        // Handle stem file selection
+        function handleStemFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedStemFile = file;
+                document.getElementById('stemFileName').textContent = `Selected: ${file.name}`;
+                document.getElementById('stemFileName').classList.remove('hidden');
+            }
+        }
+
+        // Get stem icon
+        function getStemIcon(stemName) {
+            const icons = {
+                'drums': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="4" stroke-width="2"/>
+                </svg>`,
+                'bass': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/>
+                </svg>`,
+                'vocals': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                </svg>`,
+                'other': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                </svg>`
+            };
+            return icons[stemName.toLowerCase()] || icons['other'];
+        }
+
+        // Get stem color
+        function getStemColor(stemName) {
+            const colors = {
+                'drums': 'from-red-500 to-orange-500',
+                'bass': 'from-blue-500 to-indigo-500',
+                'vocals': 'from-pink-500 to-purple-500',
+                'other': 'from-green-500 to-teal-500'
+            };
+            return colors[stemName.toLowerCase()] || 'from-gray-500 to-gray-600';
+        }
+
+        // Get stem background color
+        function getStemBgColor(stemName) {
+            const colors = {
+                'drums': 'bg-red-100 border-red-200',
+                'bass': 'bg-blue-100 border-blue-200',
+                'vocals': 'bg-pink-100 border-pink-200',
+                'other': 'bg-green-100 border-green-200'
+            };
+            return colors[stemName.toLowerCase()] || 'bg-gray-100 border-gray-200';
+        }
+
+        // Separate stems
+        async function separateStems() {
+            if (!selectedStemFile) {
+                alert('Please select an audio file first');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('stemLoading').classList.remove('hidden');
+            document.getElementById('stemResults').classList.add('hidden');
+            document.getElementById('separateBtn').disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('audio', selectedStemFile);
+
+                const response = await fetch('/split_individual', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+                    throw new Error(errorData.error || `Server returned ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentStemResults = data;
+                displayStemResults(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to separate audio: ' + error.message);
+            } finally {
+                document.getElementById('stemLoading').classList.add('hidden');
+                document.getElementById('separateBtn').disabled = false;
+            }
+        }
+
+        // Display stem results
+        function displayStemResults(data) {
+            if (!data.stems || data.stems.length === 0) {
+                alert('No stems received from server');
+                return;
+            }
+
+            // Show results section
+            document.getElementById('stemResults').classList.remove('hidden');
+            document.getElementById('stemOriginalFile').textContent = `Original: ${data.original_filename}`;
+
+            // Display stems
+            const grid = document.getElementById('stemsGrid');
+            grid.innerHTML = '';
+
+            data.stems.forEach(stem => {
+                const colorClass = getStemColor(stem.name);
+                const bgColorClass = getStemBgColor(stem.name);
+                const icon = getStemIcon(stem.name);
+
+                const card = document.createElement('div');
+                const cardBg = isDarkTheme 
+                    ? 'bg-black bg-opacity-40 backdrop-blur-xl rounded-xl border border-purple-500 border-opacity-30 p-6 shadow-xl'
+                    : `bg-white bg-opacity-90 backdrop-blur-xl rounded-xl border ${bgColorClass.split(' ')[1]} p-6 shadow-lg`;
+                card.className = cardBg;
+                card.innerHTML = `
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-14 h-14 bg-gradient-to-br ${colorClass} rounded-xl flex items-center justify-center text-white">
+                            ${icon}
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold ${isDarkTheme ? 'text-gray-200' : 'text-gray-800'} capitalize">${stem.name}</h4>
+                            <p class="text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}">Stem Track</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <audio controls class="w-full" style="height: 40px;">
+                            <source src="${stem.download_url}" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <a href="${stem.download_url}" 
+                           download="${stem.filename}"
+                           class="block w-full py-2 px-4 bg-gradient-to-r ${colorClass} hover:opacity-90 rounded-lg font-semibold text-white text-center transition-all duration-300">
+                            Download ${stem.name.charAt(0).toUpperCase() + stem.name.slice(1)}
+                        </a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Scroll to results
+            document.getElementById('stemResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Download all stems as ZIP
+        async function downloadAllStems() {
+            if (!selectedStemFile) {
+                alert('No file to download stems for');
+                return;
+            }
+
+            document.getElementById('downloadAllBtn').disabled = true;
+            document.getElementById('downloadAllBtn').textContent = 'Preparing ZIP...';
+
+            try {
+                const formData = new FormData();
+                formData.append('audio', selectedStemFile);
+
+                const response = await fetch('/split', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+                    throw new Error(errorData.error || `Server returned ${response.status}`);
+                }
+
+                // Download the ZIP file
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${selectedStemFile.name.split('.')[0]}_stems.zip`;
+                link.click();
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to download stems: ' + error.message);
+            } finally {
+                document.getElementById('downloadAllBtn').disabled = false;
+                document.getElementById('downloadAllBtn').textContent = 'Download All Stems (ZIP)';
+            }
+        }
+
+        // Update navigation styling on theme change
+        function updateNavStyling() {
+            const navTonecraft = document.getElementById('navTonecraft');
+            const navStemflow = document.getElementById('navStemflow');
+            const isTonecraftActive = !document.getElementById('tonecraftPage').classList.contains('hidden');
+            
+            const activeNavClass = 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
+            const inactiveNavClass = isDarkTheme 
+                ? 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
+            
+            if (isTonecraftActive) {
+                navTonecraft.className = activeNavClass;
+                navStemflow.className = inactiveNavClass;
+            } else {
+                navStemflow.className = activeNavClass;
+                navTonecraft.className = inactiveNavClass;
+            }
         }
     </script>
 </body>
