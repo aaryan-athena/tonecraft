@@ -1,0 +1,21 @@
+{
+  "Global": {
+    "chorusdepth": [0.0, 0.02],
+    "chorusmix": [0.0, 1.0],
+    "chorusrate": [0.1, 5.0],
+    "delayfeedback": [0.0, 0.95],
+    "delaymix": [0.0, 1.0],
+    "delaytime": [0.01, 2.0],
+    "distortiondrive": [0.0, 1.0],
+    "distortiontone": [0.0, 1.0],
+    "eqbass": [-12.0, 12.0],
+    "eqmid": [-12.0, 12.0],
+    "eqtreble": [-12.0, 12.0],
+    "mastervolume": [-20.0, 20.0],
+    "overdrivedrive": [0.0, 1.0],
+    "reverbdamp": [0.0, 1.0],
+    "reverbsize": [0.0, 5.0],
+    "reverbt60": [0.1, 60.0],
+    "reverbwet": [0.0, 1.0]
+  }
+}

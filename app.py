@@ -3,7 +3,7 @@ import os
 import tempfile
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
-from music_tone_classifier import MusicToneClassifier
+from tone_classifier_wrapper import ToneCraftClassifier
 import torch
 import torchaudio
 import soundfile as sf
@@ -24,8 +24,11 @@ def load_global_ranges():
 
 # --- Initialize AI Model ---
 print("Loading AI models...")
-classifier = MusicToneClassifier()
-classifier.load_models(save_dir="models")
+classifier = ToneCraftClassifier()
+classifier.load_models(
+    audio_model_dir="guitar_audio/models",
+    text_model_dir="guitar_text/models"
+)
 global_ranges = load_global_ranges()
 print("AI models loaded successfully!")
 
