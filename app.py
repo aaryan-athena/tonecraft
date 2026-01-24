@@ -110,8 +110,31 @@ CORS(app)  # Enable CORS for web interface
 
 @app.route('/')
 def index():
-    """Serve the web interface"""
+    """Serve the landing page"""
     return send_from_directory('.', 'index.html')
+
+@app.route('/tonecraft.html')
+def tonecraft_page():
+    """Serve the ToneCraft tone generator page"""
+    return send_from_directory('.', 'tonecraft.html')
+
+@app.route('/stemflow.html')
+def stemflow_page():
+    """Serve the StemFlow stem separation page"""
+    return send_from_directory('.', 'stemflow.html')
+
+@app.route('/download/plugin')
+def download_plugin():
+    """Serve the ToneCraft VST3 plugin for download"""
+    plugin_path = os.path.join(os.path.dirname(__file__), 'ToneCraft_guitar.vst3')
+    if os.path.exists(plugin_path):
+        return send_file(
+            plugin_path,
+            as_attachment=True,
+            download_name='ToneCraft_guitar.vst3'
+        )
+    else:
+        return jsonify({"error": "Plugin file not found"}), 404
 
 @app.route('/predict', methods=['POST'])
 def predict():

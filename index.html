@@ -3,869 +3,731 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToneCraft AI - Guitar Tone Generator & StemFlow</title>
+    <title>ToneCraft AI - Shape Your Sound with Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#3b82f6',
-                        secondary: '#06b6d4',
-                    }
+                        primary: { 50: '#fef7ee', 100: '#fdedd3', 200: '#f9d7a5', 300: '#f4b96d', 400: '#ee9132', 500: '#ea760f', 600: '#db5d09', 700: '#b6440a', 800: '#91360f' },
+                        accent: { 500: '#f59e0b', 600: '#d97706' },
+                        dark: { 800: '#1a1a2e', 900: '#0f0f1a' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
     <style>
-        @keyframes gradient {
+        * { font-family: 'Inter', sans-serif; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(234, 118, 15, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(234, 118, 15, 0.6); }
+        }
+        
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        @keyframes gradient-shift {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        .animate-gradient {
-            background-size: 200% 200%;
-            animation: gradient 15s ease infinite;
-        }
-        .knob-container {
-            transition: all 0.3s ease;
-        }
-        .knob-container:hover {
-            transform: translateY(-2px);
+        
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-delayed { animation: float 6s ease-in-out infinite; animation-delay: 2s; }
+        .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .animate-gradient { background-size: 200% 200%; animation: gradient-shift 8s ease infinite; }
+        
+        .guitar-bg {
+            background-image: 
+                radial-gradient(ellipse at 20% 80%, rgba(234, 118, 15, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(217, 119, 6, 0.05) 0%, transparent 70%);
         }
         
-        /* Light theme styles */
-        body.light-theme {
-            background: linear-gradient(to bottom right, #f0f9ff, #dbeafe, #f0f9ff);
-            color: #1f2937;
+        .sound-wave {
+            position: relative;
         }
-        body.light-theme .text-white { color: #ffffff; }
-        body.light-theme .text-gray-300 { color: #4b5563; }
-        body.light-theme .text-gray-400 { color: #6b7280; }
-        body.light-theme .text-gray-500 { color: #9ca3af; }
-        body.light-theme .bg-black { background-color: #ffffff; }
-        body.light-theme .bg-gray-800 { background-color: #f3f4f6; }
-        body.light-theme .bg-gray-900 { background-color: #ffffff; }
-        body.light-theme .border-blue-500 { border-color: #60a5fa; }
-        body.light-theme .placeholder-gray-500::placeholder { color: #9ca3af; }
+        
+        .sound-wave::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                rgba(234, 118, 15, 0.03) 2px,
+                rgba(234, 118, 15, 0.03) 4px
+            );
+            animation: wave 20s linear infinite;
+        }
+        
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(234, 118, 15, 0.25);
+        }
+        
+        .nav-link {
+            position: relative;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #ea760f, #f59e0b);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after { width: 100%; }
+        
+        .testimonial-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            backdrop-filter: blur(10px);
+        }
+        
+        .section-divider {
+            background: linear-gradient(90deg, transparent, rgba(234, 118, 15, 0.3), transparent);
+            height: 1px;
+        }
+        
+        html { scroll-behavior: smooth; }
     </style>
 </head>
-<body class="light-theme bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 min-h-screen text-gray-900">
-    
-    <!-- Header -->
-    <header class="bg-white bg-opacity-80 backdrop-blur-lg border-b border-blue-200 shadow-sm">
-        <div class="container mx-auto px-6 py-4">
+<body class="bg-dark-900 text-white guitar-bg sound-wave min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-dark-900/80 backdrop-blur-xl border-b border-orange-500/20">
+        <div class="container mx-auto px-4 md:px-6 py-3 md:py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div id="logoIcon" class="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                <!-- Logo -->
+                <a href="/" class="flex items-center space-x-2 md:space-x-3 group">
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-orange-500/30 transition-shadow">
+                        <svg class="w-5 h-5 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
                         </svg>
                     </div>
-                    <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                        ToneCraft AI
-                    </h1>
+                    <div class="hidden sm:block">
+                        <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">ToneCraft</h1>
+                        <p class="text-xs text-gray-500">Shape Your Sound</p>
+                    </div>
+                </a>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#about" class="nav-link text-gray-300 hover:text-orange-400 transition-colors font-medium">About</a>
+                    <a href="#how-it-works" class="nav-link text-gray-300 hover:text-orange-400 transition-colors font-medium">How It Works</a>
+                    <a href="#download" class="nav-link text-gray-300 hover:text-orange-400 transition-colors font-medium">Download</a>
+                    <a href="#testimonials" class="nav-link text-gray-300 hover:text-orange-400 transition-colors font-medium">Testimonials</a>
+                    <a href="#contact" class="nav-link text-gray-300 hover:text-orange-400 transition-colors font-medium">Contact</a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Navigation Tabs -->
-                    <nav class="flex space-x-2">
-                        <button id="navTonecraft" onclick="showPage('tonecraft')" class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg">
-                            ToneCraft
-                        </button>
-                        <button id="navStemflow" onclick="showPage('stemflow')" class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200">
-                            StemFlow
-                        </button>
-                    </nav>
-                    <button id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg transition-colors" title="Toggle theme">
-                        <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                        <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                        </svg>
-                    </button>
+
+                <!-- CTA Buttons -->
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <a href="/tonecraft.html" class="px-3 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-lg font-semibold transition-all shadow-lg hover:shadow-orange-500/30 text-xs md:text-sm">
+                        ToneCraft
+                    </a>
+                    <a href="/stemflow.html" class="px-3 py-2 md:px-5 md:py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg font-semibold transition-all text-xs md:text-sm whitespace-nowrap">
+                        StemFlow
+                    </a>
                 </div>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-6 py-12">
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center pt-20 relative">
+        <!-- Background Elements -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-1/4 left-10 w-72 h-72 bg-orange-500/10 rounded-full blur-3xl animate-float"></div>
+            <div class="absolute bottom-1/4 right-10 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-float-delayed"></div>
+            <!-- Guitar String Lines -->
+            <svg class="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="0" y1="20" x2="100" y2="25" stroke="url(#string-gradient)" stroke-width="0.1"/>
+                <line x1="0" y1="40" x2="100" y2="35" stroke="url(#string-gradient)" stroke-width="0.1"/>
+                <line x1="0" y1="60" x2="100" y2="65" stroke="url(#string-gradient)" stroke-width="0.1"/>
+                <line x1="0" y1="80" x2="100" y2="75" stroke="url(#string-gradient)" stroke-width="0.1"/>
+                <defs>
+                    <linearGradient id="string-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#ea760f;stop-opacity:0"/>
+                        <stop offset="50%" style="stop-color:#ea760f;stop-opacity:1"/>
+                        <stop offset="100%" style="stop-color:#ea760f;stop-opacity:0"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
 
-        <!-- ==================== TONECRAFT PAGE ==================== -->
-        <div id="tonecraftPage">
-        
-        <!-- Hero Section -->
-        <div class="text-center mb-12">
-            <h2 class="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-clip-text text-transparent">
-                AI-Powered Guitar Tone Generator
-            </h2>
-            <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-                Describe your desired tone or upload an audio file, and let our AI generate the perfect guitar parameters
+        <div class="container mx-auto px-4 md:px-6 text-center relative z-10">
+            <!-- Badge -->
+            <div class="inline-flex items-center space-x-2 bg-orange-500/10 border border-orange-500/30 rounded-full px-3 py-1.5 md:px-4 md:py-2 mb-6 md:mb-8">
+                <span class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
+                <span class="text-orange-400 text-xs md:text-sm font-medium">AI-Powered Guitar Tone Engine</span>
+            </div>
+
+            <!-- Main Headline -->
+            <h1 class="text-4xl sm:text-5xl md:text-7xl font-extrabold mb-4 md:mb-6 leading-tight px-2">
+                <span class="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">Shape Your</span>
+                <br>
+                <span class="bg-gradient-to-r from-orange-400 via-amber-500 to-orange-600 bg-clip-text text-transparent animate-gradient">Perfect Tone</span>
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="text-lg md:text-xl lg:text-2xl text-gray-400 max-w-3xl mx-auto mb-8 md:mb-10 leading-relaxed px-4">
+                Our intelligent system analyzes your sound preferences and crafts precise guitar parameters — from heavy metal distortion to silky clean jazz tones.
             </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 md:mb-16 px-4">
+                <a href="/tonecraft.html" class="group w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold text-base md:text-lg transition-all shadow-xl hover:shadow-orange-500/40 animate-pulse-glow flex items-center justify-center space-x-3">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Start Creating Tones</span>
+                    <svg class="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </a>
+                <a href="/stemflow.html" class="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-white/5 hover:bg-white/10 border border-white/20 hover:border-orange-500/50 rounded-xl font-bold text-base md:text-lg transition-all flex items-center justify-center space-x-3">
+                    <svg class="w-5 h-5 md:w-6 md:h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                    <span>Try StemFlow</span>
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div class="text-3xl font-bold text-orange-400">17+</div>
+                    <div class="text-sm text-gray-500">Tone Parameters</div>
+                </div>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div class="text-3xl font-bold text-orange-400">∞</div>
+                    <div class="text-sm text-gray-500">Sound Possibilities</div>
+                </div>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div class="text-3xl font-bold text-orange-400">4</div>
+                    <div class="text-sm text-gray-500">Stem Separation</div>
+                </div>
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div class="text-3xl font-bold text-orange-400">AI</div>
+                    <div class="text-sm text-gray-500">Powered Engine</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Input Section -->
-        <div class="max-w-4xl mx-auto mb-12">
-            <div class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-blue-200 p-8 shadow-xl">
-                
-                <!-- Tab Selection -->
-                <div class="flex space-x-4 mb-6">
-                    <button id="textTab" class="flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg">
-                        Text Input
-                    </button>
-                    <button id="audioTab" class="flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200">
-                        Audio Upload
-                    </button>
-                </div>
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+            </svg>
+        </div>
+    </section>
 
-                <!-- Text Input Panel -->
-                <div id="textPanel" class="space-y-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Describe Your Tone
-                    </label>
-                    <textarea 
-                        id="textInput" 
-                        rows="4" 
-                        class="w-full px-4 py-3 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400 resize-none"
-                        placeholder="e.g., heavy metal distortion, clean jazz tone, bluesy crunch..."
-                    ></textarea>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="setExample('heavy metal distortion')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
-                            Heavy Metal
-                        </button>
-                        <button onclick="setExample('clean jazz tone')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
-                            Clean Jazz
-                        </button>
-                        <button onclick="setExample('bluesy crunch')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
-                            Bluesy Crunch
-                        </button>
-                        <button onclick="setExample('ambient reverb')" class="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors">
-                            Ambient Reverb
-                        </button>
-                    </div>
-                </div>
+    <!-- Section Divider -->
+    <div class="section-divider w-full"></div>
 
-                <!-- Audio Upload Panel -->
-                <div id="audioPanel" class="hidden space-y-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Upload Audio File
-                    </label>
-                    <div class="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:border-blue-400 transition-all cursor-pointer bg-blue-50">
-                        <input type="file" id="audioInput" accept="audio/*" class="hidden" onchange="handleFileSelect(event)">
-                        <label for="audioInput" class="cursor-pointer">
-                            <svg class="w-12 h-12 mx-auto mb-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+    <!-- About Section -->
+    <section id="about" class="py-24 relative">
+        <div class="container mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <!-- Content -->
+                <div>
+                    <span class="text-orange-500 font-semibold text-sm tracking-wider uppercase">About ToneCraft</span>
+                    <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                        Where <span class="text-orange-400">Technology</span> Meets <span class="text-amber-500">Artistry</span>
+                    </h2>
+                    <p class="text-gray-400 text-lg leading-relaxed mb-6">
+                        ToneCraft was born from a simple idea: what if you could describe the guitar tone in your head and have it instantly created? Our team of musicians and AI engineers built a system that understands the language of sound.
+                    </p>
+                    <p class="text-gray-400 text-lg leading-relaxed mb-8">
+                        Whether you're chasing the warm crunch of classic rock, the crystalline cleans of jazz, or the face-melting distortion of metal — our intelligent system translates your vision into precise, playable parameters.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex items-center space-x-2 text-gray-300">
+                            <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            <p class="text-gray-700 mb-2">Click to upload or drag and drop</p>
-                            <p class="text-sm text-gray-500">WAV, MP3, or any audio format</p>
-                        </label>
-                    </div>
-                    <div id="fileName" class="text-sm text-gray-600 text-center hidden"></div>
-                </div>
-
-                <!-- Generate Button -->
-                <button 
-                    id="generateBtn"
-                    onclick="generateTone()"
-                    class="w-full mt-6 py-4 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-lg font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-blue-500/50 transform hover:scale-[1.02]"
-                >
-                    Generate Tone Parameters
-                </button>
-            </div>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="loading" class="hidden text-center mb-8">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            <p class="mt-4 text-gray-300">Processing with AI...</p>
-        </div>
-
-        <!-- Results Section -->
-        <div id="results" class="hidden max-w-6xl mx-auto">
-            
-            <!-- Tone Info Card -->
-            <div id="toneInfoCard" class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-blue-200 p-6 mb-8 shadow-xl">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold mb-2 text-gray-800">Detected Tone</h3>
-                        <p id="toneType" class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent"></p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-600 mb-1">Confidence</p>
-                        <p id="confidence" class="text-2xl font-bold text-green-500"></p>
+                            <span>Neural Network Powered</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-gray-300">
+                            <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>VST3 Plugin Compatible</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-gray-300">
+                            <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Real-time Processing</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Parameters Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="parametersGrid">
-                <!-- Parameters will be inserted here -->
-            </div>
-
-            <!-- Export Button -->
-            <div class="mt-8 text-center">
-                <button 
-                    id="exportBtn"
-                    onclick="exportParameters()"
-                    class="px-8 py-3 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg font-semibold transition-all duration-300 shadow-lg"
-                >
-                    Export as JSON
-                </button>
+                <!-- Visual -->
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-amber-600/20 rounded-3xl blur-2xl"></div>
+                    <div class="relative bg-gradient-to-br from-dark-800 to-dark-900 border border-orange-500/20 rounded-3xl p-8 overflow-hidden">
+                        <!-- Waveform Visualization -->
+                        <div class="flex items-end justify-center space-x-1 h-48 mb-6">
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 40%; animation-delay: 0s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 70%; animation-delay: 0.1s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 50%; animation-delay: 0.2s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 90%; animation-delay: 0.3s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 60%; animation-delay: 0.4s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 80%; animation-delay: 0.5s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 45%; animation-delay: 0.6s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 95%; animation-delay: 0.7s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 55%; animation-delay: 0.8s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 75%; animation-delay: 0.9s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 35%; animation-delay: 1s;"></div>
+                            <div class="w-3 bg-gradient-to-t from-orange-500 to-amber-500 rounded-full animate-pulse" style="height: 85%; animation-delay: 1.1s;"></div>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-gray-500 text-sm">AI Audio Analysis in Action</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </section>
 
-        </div> <!-- End of ToneCraft Page -->
+    <!-- Section Divider -->
+    <div class="section-divider w-full"></div>
 
-        <!-- ==================== STEMFLOW PAGE ==================== -->
-        <div id="stemflowPage" class="hidden">
-            
-            <!-- StemFlow Hero Section -->
-            <div class="text-center mb-12">
-                <h2 class="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                    StemFlow - Music Demixing
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-24 relative">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-orange-500 font-semibold text-sm tracking-wider uppercase">How It Works</span>
+                <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                    Three Steps to Your <span class="text-orange-400">Perfect Sound</span>
                 </h2>
-                <p class="text-xl text-gray-300 max-w-2xl mx-auto">
-                    Separate your music into individual stems (vocals, drums, bass, other) using AI-powered deep learning
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Our intelligent system makes tone crafting effortless. Just describe, generate, and play.
                 </p>
             </div>
 
-            <!-- StemFlow Upload Section -->
-            <div class="max-w-4xl mx-auto mb-12">
-                <div class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-purple-200 p-8 shadow-xl">
-                    
-                    <label class="block text-sm font-medium text-gray-700 mb-4">
-                        Upload Audio File for Stem Separation
-                    </label>
-                    
-                    <div class="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center hover:border-purple-400 transition-all cursor-pointer bg-purple-50" id="stemDropZone">
-                        <input type="file" id="stemAudioInput" accept="audio/*" class="hidden" onchange="handleStemFileSelect(event)">
-                        <label for="stemAudioInput" class="cursor-pointer">
-                            <svg class="w-16 h-16 mx-auto mb-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                            </svg>
-                            <p class="text-gray-700 mb-2 text-lg">Click to upload or drag and drop</p>
-                            <p class="text-sm text-gray-500">MP3, WAV, FLAC, or any audio format</p>
-                        </label>
-                    </div>
-                    <div id="stemFileName" class="text-sm text-gray-600 text-center mt-4 hidden"></div>
-
-                    <!-- Separate Button -->
-                    <button 
-                        id="separateBtn"
-                        onclick="separateStems()"
-                        class="w-full mt-6 py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-lg text-white transition-all duration-300 shadow-lg hover:shadow-purple-500/50 transform hover:scale-[1.02]"
-                    >
-                        Separate into Stems
-                    </button>
-
-                    <!-- Info Card -->
-                    <div class="mt-6 p-4 bg-purple-100 rounded-lg">
-                        <h4 class="font-semibold text-purple-800 mb-2">About StemFlow</h4>
-                        <p class="text-sm text-purple-700">
-                            StemFlow uses <strong>Demucs</strong>, a state-of-the-art deep learning model developed by Meta AI, 
-                            to separate music into 4 stems: <strong>Drums</strong>, <strong>Bass</strong>, <strong>Other</strong> (instruments), and <strong>Vocals</strong>.
-                            Processing may take a few minutes depending on the audio length.
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Step 1 -->
+                <div class="card-hover relative group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                            <span class="text-2xl font-bold">1</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">Describe Your Vision</h3>
+                        <p class="text-gray-400">
+                            Type a natural language description like "warm bluesy crunch with subtle reverb" or upload a reference audio file.
                         </p>
+                        <div class="mt-6 p-3 bg-dark-900 rounded-lg border border-orange-500/20">
+                            <code class="text-orange-400 text-sm">"heavy metal distortion"</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="card-hover relative group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                            <span class="text-2xl font-bold">2</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">AI Processing</h3>
+                        <p class="text-gray-400">
+                            Our neural network analyzes your input and generates precise parameter values for 17+ tone controls.
+                        </p>
+                        <div class="mt-6 flex justify-center space-x-1">
+                            <div class="w-2 h-8 bg-orange-500 rounded-full animate-pulse"></div>
+                            <div class="w-2 h-6 bg-orange-400 rounded-full animate-pulse" style="animation-delay: 0.1s;"></div>
+                            <div class="w-2 h-10 bg-orange-500 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                            <div class="w-2 h-4 bg-orange-400 rounded-full animate-pulse" style="animation-delay: 0.3s;"></div>
+                            <div class="w-2 h-7 bg-orange-500 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="card-hover relative group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                            <span class="text-2xl font-bold">3</span>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">Export & Play</h3>
+                        <p class="text-gray-400">
+                            Export your tone settings as JSON or load them directly into the ToneCraft VST3 plugin and start playing.
+                        </p>
+                        <div class="mt-6 inline-flex items-center space-x-2 text-green-400">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-sm font-medium">Ready to rock!</span>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- StemFlow Loading Indicator -->
-            <div id="stemLoading" class="hidden text-center mb-8">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-                <p class="mt-4 text-gray-300">AI is processing your audio. This may take a while...</p>
-                <p class="text-sm text-gray-400 mt-2">Separating into drums, bass, other, and vocals...</p>
+    <!-- Section Divider -->
+    <div class="section-divider w-full"></div>
+
+    <!-- Features Grid -->
+    <section class="py-24 relative">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-orange-500 font-semibold text-sm tracking-wider uppercase">Features</span>
+                <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                    Everything You Need to <span class="text-orange-400">Craft Your Sound</span>
+                </h2>
             </div>
 
-            <!-- StemFlow Results Section -->
-            <div id="stemResults" class="hidden max-w-4xl mx-auto">
-                
-                <!-- Success Card -->
-                <div class="bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-green-200 p-6 mb-8 shadow-xl">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <!-- Feature Cards -->
+                <div class="card-hover bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Distortion & Overdrive</h3>
+                    <p class="text-gray-400 text-sm">From subtle warmth to face-melting gain, dial in your perfect drive tone.</p>
+                </div>
+
+                <div class="card-hover bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">3-Band EQ</h3>
+                    <p class="text-gray-400 text-sm">Shape your tone with precise bass, mid, and treble controls.</p>
+                </div>
+
+                <div class="card-hover bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Reverb Engine</h3>
+                    <p class="text-gray-400 text-sm">Add depth with room size, damping, decay time, and wet/dry mix.</p>
+                </div>
+
+                <div class="card-hover bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Delay Effects</h3>
+                    <p class="text-gray-400 text-sm">Create space with adjustable time, feedback, and mix controls.</p>
+                </div>
+
+                <div class="card-hover bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Chorus Modulation</h3>
+                    <p class="text-gray-400 text-sm">Add lush, shimmering textures with depth, rate, and mix controls.</p>
+                </div>
+
+                <div class="card-hover bg-white/5 border border-white/10 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">StemFlow Separation</h3>
+                    <p class="text-gray-400 text-sm">Isolate drums, bass, vocals, and other instruments from any track.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Divider -->
+    <div class="section-divider w-full"></div>
+
+    <!-- Download Section -->
+    <section id="download" class="py-24 relative">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="relative bg-gradient-to-br from-orange-500/10 via-dark-800 to-amber-600/10 border border-orange-500/30 rounded-3xl p-12 text-center overflow-hidden">
+                    <!-- Background Decoration -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl"></div>
+                    <div class="absolute bottom-0 left-0 w-64 h-64 bg-amber-600/10 rounded-full blur-3xl"></div>
+                    
+                    <div class="relative z-10">
+                        <div class="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
+                        </div>
+                        
+                        <span class="text-orange-500 font-semibold text-sm tracking-wider uppercase">Download Plugin</span>
+                        <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                            Get the <span class="text-orange-400">ToneCraft VST3</span> Plugin
+                        </h2>
+                        <p class="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
+                            Download our free VST3 plugin and start crafting your perfect guitar tones directly in your DAW. Compatible with all major digital audio workstations.
+                        </p>
+                        
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+                            <a href="/download/plugin" class="group px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold text-lg transition-all shadow-xl hover:shadow-orange-500/40 flex items-center space-x-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                <span>Download VST3</span>
+                            </a>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>Free to use</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>VST3 Format</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>Windows & macOS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Divider -->
+    <div class="section-divider w-full"></div>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="py-24 relative">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-orange-500 font-semibold text-sm tracking-wider uppercase">Testimonials</span>
+                <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                    What <span class="text-orange-400">Musicians</span> Are Saying
+                </h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                    Join thousands of guitarists who have transformed their tone-crafting workflow.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Testimonial 1 -->
+                <div class="testimonial-card rounded-2xl p-8 border border-white/10">
+                    <div class="flex items-center space-x-1 mb-4">
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <p class="text-gray-300 mb-6 italic">
+                        "ToneCraft completely changed my workflow. I used to spend hours tweaking knobs — now I just describe what I want and the AI nails it every time."
+                    </p>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center font-bold">
+                            MK
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-gray-800">Separation Complete!</h3>
-                            <p id="stemOriginalFile" class="text-gray-600">Your audio has been separated into 4 stems</p>
+                            <div class="font-semibold">Marcus Klein</div>
+                            <div class="text-sm text-gray-500">Session Guitarist, LA</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Stems Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="stemsGrid">
-                    <!-- Stems will be inserted here -->
+                <!-- Testimonial 2 -->
+                <div class="testimonial-card rounded-2xl p-8 border border-white/10">
+                    <div class="flex items-center space-x-1 mb-4">
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <p class="text-gray-300 mb-6 italic">
+                        "The StemFlow feature is incredible for learning songs. I can isolate the guitar track and practice along without getting lost in the mix."
+                    </p>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center font-bold">
+                            SR
+                        </div>
+                        <div>
+                            <div class="font-semibold">Sarah Rodriguez</div>
+                            <div class="text-sm text-gray-500">Music Teacher, Austin</div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Download All Button -->
-                <div class="mt-8 text-center">
-                    <button 
-                        id="downloadAllBtn"
-                        onclick="downloadAllStems()"
-                        class="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg"
-                    >
-                        Download All Stems (ZIP)
-                    </button>
+                <!-- Testimonial 3 -->
+                <div class="testimonial-card rounded-2xl p-8 border border-white/10">
+                    <div class="flex items-center space-x-1 mb-4">
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    </div>
+                    <p class="text-gray-300 mb-6 italic">
+                        "As a producer, I've tried dozens of tone-matching tools. ToneCraft's AI understands musical context better than anything else I've used."
+                    </p>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center font-bold">
+                            JT
+                        </div>
+                        <div>
+                            <div class="font-semibold">James Thompson</div>
+                            <div class="text-sm text-gray-500">Music Producer, Nashville</div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-        </div> <!-- End of StemFlow Page -->
+    <!-- Section Divider -->
+    <div class="section-divider w-full"></div>
 
-    </main>
+    <!-- Contact Section -->
+    <section id="contact" class="py-24 relative">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-12">
+                    <span class="text-orange-500 font-semibold text-sm tracking-wider uppercase">Contact Us</span>
+                    <h2 class="text-4xl md:text-5xl font-bold mt-4 mb-6">
+                        Get In <span class="text-orange-400">Touch</span>
+                    </h2>
+                    <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                        Have questions or feedback? We'd love to hear from you.
+                    </p>
+                </div>
+
+                <div class="flex justify-center">
+                    <!-- Contact Info -->
+                    <div class="space-y-8 max-w-md">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-1">Email</h4>
+                                <p class="text-gray-400">support@tonecraft.ai</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-1">Community</h4>
+                                <p class="text-gray-400">Join our Discord server for tips and discussions</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-4">
+                            <div class="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-1">Documentation</h4>
+                                <p class="text-gray-400">Check out our guides and tutorials</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Form -->
+                    <!-- <form class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Name</label>
+                            <input type="text" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all text-white placeholder-gray-500" placeholder="Your name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                            <input type="email" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all text-white placeholder-gray-500" placeholder="your@email.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Message</label>
+                            <textarea rows="4" class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all text-white placeholder-gray-500 resize-none" placeholder="How can we help?"></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold transition-all shadow-lg hover:shadow-orange-500/30">
+                            Send Message
+                        </button>
+                    </form> -->
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Footer -->
-    <footer class="mt-20 py-8 text-center text-gray-400 text-sm">
-        <p>ToneCraft AI & StemFlow &copy; 2025 | Powered by Machine Learning</p>
+    <footer class="py-12 border-t border-white/10">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                        </svg>
+                    </div>
+                    <span class="font-bold text-lg">ToneCraft AI</span>
+                </div>
+
+                <div class="flex items-center space-x-6 text-sm text-gray-500">
+                    <a href="#" class="hover:text-orange-400 transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-orange-400 transition-colors">Terms of Service</a>
+                    <a href="#" class="hover:text-orange-400 transition-colors">Support</a>
+                </div>
+
+                <p class="text-gray-500 text-sm">
+                    &copy; 2026 ToneCraft AI. All rights reserved.
+                </p>
+            </div>
+        </div>
     </footer>
 
-    <script>
-        let currentResults = null;
-        let selectedFile = null;
-        let isDarkTheme = false;
-        
-        // StemFlow variables
-        let selectedStemFile = null;
-        let currentStemResults = null;
-
-        // Page Navigation
-        function showPage(page) {
-            const tonecraftPage = document.getElementById('tonecraftPage');
-            const stemflowPage = document.getElementById('stemflowPage');
-            const navTonecraft = document.getElementById('navTonecraft');
-            const navStemflow = document.getElementById('navStemflow');
-            
-            const activeNavClass = 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
-            const inactiveNavClass = isDarkTheme 
-                ? 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
-            
-            if (page === 'tonecraft') {
-                tonecraftPage.classList.remove('hidden');
-                stemflowPage.classList.add('hidden');
-                navTonecraft.className = activeNavClass;
-                navStemflow.className = inactiveNavClass;
-            } else if (page === 'stemflow') {
-                tonecraftPage.classList.add('hidden');
-                stemflowPage.classList.remove('hidden');
-                navStemflow.className = activeNavClass;
-                navTonecraft.className = inactiveNavClass;
-            }
-        }
-
-        // Theme toggle
-        function toggleTheme() {
-            isDarkTheme = !isDarkTheme;
-            const body = document.body;
-            const sunIcon = document.getElementById('sunIcon');
-            const moonIcon = document.getElementById('moonIcon');
-            const themeToggle = document.getElementById('themeToggle');
-            const exportBtn = document.getElementById('exportBtn');
-            const logoIcon = document.getElementById('logoIcon');
-            
-            if (isDarkTheme) {
-                body.className = 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 min-h-screen text-white';
-                sunIcon.classList.remove('hidden');
-                moonIcon.classList.add('hidden');
-                sunIcon.className = 'w-5 h-5 text-yellow-300';
-                themeToggle.className = 'p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors';
-                logoIcon.className = 'w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center';
-                if (exportBtn) {
-                    exportBtn.className = 'px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all duration-300 shadow-lg';
-                }
-            } else {
-                body.className = 'light-theme bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 min-h-screen text-gray-900';
-                sunIcon.classList.add('hidden');
-                moonIcon.classList.remove('hidden');
-                moonIcon.className = 'w-5 h-5 text-gray-700';
-                themeToggle.className = 'p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors';
-                logoIcon.className = 'w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center';
-                if (exportBtn) {
-                    exportBtn.className = 'px-8 py-3 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg font-semibold transition-all duration-300 shadow-lg';
-                }
-            }
-            
-            // Update header
-            const header = document.querySelector('header');
-            const headerSubtext = header.querySelector('.text-sm');
-            
-            if (isDarkTheme) {
-                header.className = 'bg-black bg-opacity-50 backdrop-blur-lg border-b border-blue-500 border-opacity-30';
-                if (headerSubtext) headerSubtext.className = 'text-sm text-gray-400';
-            } else {
-                header.className = 'bg-white bg-opacity-80 backdrop-blur-lg border-b border-blue-200 shadow-sm';
-                if (headerSubtext) headerSubtext.className = 'text-sm text-gray-600';
-            }
-            
-            // Update navigation styling
-            updateNavStyling();
-            
-            localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
-        }
-
-        // Load saved theme
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                toggleTheme();
-            }
-        });
-
-        // Tab switching
-        document.getElementById('textTab').addEventListener('click', () => {
-            const activeClass = 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
-            const inactiveClass = isDarkTheme 
-                ? 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
-            
-            document.getElementById('textTab').className = activeClass;
-            document.getElementById('audioTab').className = inactiveClass;
-            document.getElementById('textPanel').classList.remove('hidden');
-            document.getElementById('audioPanel').classList.add('hidden');
-        });
-
-        document.getElementById('audioTab').addEventListener('click', () => {
-            const activeClass = 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
-            const inactiveClass = isDarkTheme 
-                ? 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
-            
-            document.getElementById('audioTab').className = activeClass;
-            document.getElementById('textTab').className = inactiveClass;
-            document.getElementById('audioPanel').classList.remove('hidden');
-            document.getElementById('textPanel').classList.add('hidden');
-        });
-
-        // Set example text
-        function setExample(text) {
-            document.getElementById('textInput').value = text;
-        }
-
-        // Handle file selection
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                selectedFile = file;
-                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
-                document.getElementById('fileName').classList.remove('hidden');
-            }
-        }
-
-        // Parameter ranges for denormalization display
-        const paramRanges = {
-            "chorusdepth": [0.0, 0.02],
-            "chorusmix": [0.0, 1.0],
-            "chorusrate": [0.1, 5.0],
-            "delayfeedback": [0.0, 0.95],
-            "delaymix": [0.0, 1.0],
-            "delaytime": [0.01, 2.0],
-            "distortiondrive": [0.0, 1.0],
-            "distortiontone": [0.0, 1.0],
-            "eqbass": [-12.0, 12.0],
-            "eqmid": [-12.0, 12.0],
-            "eqtreble": [-12.0, 12.0],
-            "mastervolume": [-20.0, 20.0],
-            "overdrivedrive": [0.0, 1.0],
-            "reverbdamp": [0.0, 1.0],
-            "reverbsize": [0.0, 5.0],
-            "reverbt60": [0.1, 60.0],
-            "reverbwet": [0.0, 1.0]
-        };
-
-        // Calculate percentage
-        function calculatePercentage(value, paramName) {
-            const [min, max] = paramRanges[paramName];
-            return ((value - min) / (max - min) * 100).toFixed(1);
-        }
-
-        // Format parameter name for display
-        function formatParamName(name) {
-            return name.replace(/([A-Z])/g, ' $1')
-                      .replace(/^./, str => str.toUpperCase())
-                      .trim();
-        }
-
-        // Get category color
-        function getCategoryColor(paramName) {
-            if (paramName.includes('distortion') || paramName.includes('overdrive')) {
-                return 'from-red-500 to-orange-500';
-            } else if (paramName.includes('eq')) {
-                return 'from-blue-500 to-cyan-500';
-            } else if (paramName.includes('reverb')) {
-                return 'from-purple-500 to-pink-500';
-            } else if (paramName.includes('delay')) {
-                return 'from-green-500 to-teal-500';
-            } else if (paramName.includes('chorus')) {
-                return 'from-yellow-500 to-amber-500';
-            } else {
-                return 'from-indigo-500 to-purple-500';
-            }
-        }
-
-        // Generate tone parameters
-        async function generateTone() {
-            const textInput = document.getElementById('textInput').value.trim();
-            const isTextMode = !document.getElementById('textPanel').classList.contains('hidden');
-
-            if (isTextMode && !textInput) {
-                alert('Please enter a tone description');
-                return;
-            }
-
-            if (!isTextMode && !selectedFile) {
-                alert('Please select an audio file');
-                return;
-            }
-
-            // Show loading
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('results').classList.add('hidden');
-            document.getElementById('generateBtn').disabled = true;
-
-            try {
-                let response;
-
-                if (isTextMode) {
-                    // Text input mode
-                    response = await fetch('/predict', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ text_input: textInput })
-                    });
-                } else {
-                    // Audio upload mode
-                    const formData = new FormData();
-                    formData.append('audio', selectedFile);
-                    
-                    response = await fetch('/predict_audio', {
-                        method: 'POST',
-                        body: formData
-                    });
-                }
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                    throw new Error(errorData.error || `Server returned ${response.status}`);
-                }
-
-                const data = await response.json();
-                currentResults = data;
-                displayResults(data);
-
-            } catch (error) {
-                console.error('Error:', error);
-                const errorMsg = isTextMode 
-                    ? 'Failed to generate tone parameters. Please check your internet connection and try again.'
-                    : 'Failed to process audio file. Error: ' + error.message;
-                alert(errorMsg);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('generateBtn').disabled = false;
-            }
-        }
-
-        // Display results
-        function displayResults(data) {
-            if (!data.PARAMETERS || data.PARAMETERS.length === 0) {
-                alert('No parameters received from server');
-                return;
-            }
-
-            // Show results section
-            document.getElementById('results').classList.remove('hidden');
-            
-            // Set tone type and confidence (if available from server)
-            const toneTypeEl = document.getElementById('toneType');
-            const confidenceEl = document.getElementById('confidence');
-            
-            // For now, we'll extract this from the response or set defaults
-            // The server doesn't currently return tone_type and confidence in the response
-            // So we'll set placeholder values
-            toneTypeEl.textContent = data.tone_type || 'Custom Tone';
-            confidenceEl.textContent = data.confidence ? `${(data.confidence * 100).toFixed(1)}%` : 'N/A';
-            
-            // Update tone info card theme
-            const toneInfoCard = document.getElementById('toneInfoCard');
-            if (isDarkTheme) {
-                toneInfoCard.className = 'bg-black bg-opacity-40 backdrop-blur-xl rounded-2xl border border-blue-500 border-opacity-30 p-6 mb-8 shadow-2xl';
-                toneInfoCard.querySelector('h3').className = 'text-2xl font-bold mb-2 text-gray-200';
-                toneInfoCard.querySelectorAll('.text-sm')[0].className = 'text-sm text-gray-400 mb-1';
-            } else {
-                toneInfoCard.className = 'bg-white bg-opacity-90 backdrop-blur-xl rounded-2xl border border-blue-200 p-6 mb-8 shadow-xl';
-                toneInfoCard.querySelector('h3').className = 'text-2xl font-bold mb-2 text-gray-800';
-                toneInfoCard.querySelectorAll('.text-sm')[0].className = 'text-sm text-gray-600 mb-1';
-            }
-
-            // Scroll to results
-            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            // Display parameters
-            const grid = document.getElementById('parametersGrid');
-            grid.innerHTML = '';
-
-            data.PARAMETERS.forEach(param => {
-                const percentage = calculatePercentage(param.value, param.name);
-                const displayName = formatParamName(param.name);
-                const colorClass = getCategoryColor(param.name);
-                const [min, max] = paramRanges[param.name];
-
-                const card = document.createElement('div');
-                const cardBg = isDarkTheme 
-                    ? 'knob-container bg-black bg-opacity-40 backdrop-blur-xl rounded-xl border border-blue-500 border-opacity-30 p-6 shadow-xl'
-                    : 'knob-container bg-white bg-opacity-90 backdrop-blur-xl rounded-xl border border-blue-200 p-6 shadow-lg';
-                card.className = cardBg;
-                card.innerHTML = `
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-semibold ${isDarkTheme ? 'text-gray-200' : 'text-gray-800'}">${displayName}</h4>
-                        <span class="text-xs px-2 py-1 bg-gradient-to-r ${colorClass} rounded-full text-white font-medium">
-                            ${percentage}%
-                        </span>
-                    </div>
-                    <div class="mb-3">
-                        <div class="w-full ${isDarkTheme ? 'bg-gray-800' : 'bg-gray-200'} rounded-full h-2 overflow-hidden">
-                            <div class="bg-gradient-to-r ${colorClass} h-2 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
-                        </div>
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}">Value:</span>
-                        <span class="font-mono ${isDarkTheme ? 'text-cyan-300' : 'text-blue-600'}">${param.value.toFixed(4)}</span>
-                    </div>
-                    <div class="flex justify-between text-xs ${isDarkTheme ? 'text-gray-500' : 'text-gray-500'} mt-1">
-                        <span>Min: ${min}</span>
-                        <span>Max: ${max}</span>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        // Export parameters as JSON
-        function exportParameters() {
-            if (!currentResults) return;
-
-            const dataStr = JSON.stringify(currentResults, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'tone-parameters.json';
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // ==================== STEMFLOW FUNCTIONS ====================
-
-        // Handle stem file selection
-        function handleStemFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                selectedStemFile = file;
-                document.getElementById('stemFileName').textContent = `Selected: ${file.name}`;
-                document.getElementById('stemFileName').classList.remove('hidden');
-            }
-        }
-
-        // Get stem icon
-        function getStemIcon(stemName) {
-            const icons = {
-                'drums': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                    <circle cx="12" cy="12" r="4" stroke-width="2"/>
-                </svg>`,
-                'bass': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"/>
-                </svg>`,
-                'vocals': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-                </svg>`,
-                'other': `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
-                </svg>`
-            };
-            return icons[stemName.toLowerCase()] || icons['other'];
-        }
-
-        // Get stem color
-        function getStemColor(stemName) {
-            const colors = {
-                'drums': 'from-red-500 to-orange-500',
-                'bass': 'from-blue-500 to-indigo-500',
-                'vocals': 'from-pink-500 to-purple-500',
-                'other': 'from-green-500 to-teal-500'
-            };
-            return colors[stemName.toLowerCase()] || 'from-gray-500 to-gray-600';
-        }
-
-        // Get stem background color
-        function getStemBgColor(stemName) {
-            const colors = {
-                'drums': 'bg-red-100 border-red-200',
-                'bass': 'bg-blue-100 border-blue-200',
-                'vocals': 'bg-pink-100 border-pink-200',
-                'other': 'bg-green-100 border-green-200'
-            };
-            return colors[stemName.toLowerCase()] || 'bg-gray-100 border-gray-200';
-        }
-
-        // Separate stems
-        async function separateStems() {
-            if (!selectedStemFile) {
-                alert('Please select an audio file first');
-                return;
-            }
-
-            // Show loading
-            document.getElementById('stemLoading').classList.remove('hidden');
-            document.getElementById('stemResults').classList.add('hidden');
-            document.getElementById('separateBtn').disabled = true;
-
-            try {
-                const formData = new FormData();
-                formData.append('audio', selectedStemFile);
-
-                const response = await fetch('/split_individual', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                    throw new Error(errorData.error || `Server returned ${response.status}`);
-                }
-
-                const data = await response.json();
-                currentStemResults = data;
-                displayStemResults(data);
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to separate audio: ' + error.message);
-            } finally {
-                document.getElementById('stemLoading').classList.add('hidden');
-                document.getElementById('separateBtn').disabled = false;
-            }
-        }
-
-        // Display stem results
-        function displayStemResults(data) {
-            if (!data.stems || data.stems.length === 0) {
-                alert('No stems received from server');
-                return;
-            }
-
-            // Show results section
-            document.getElementById('stemResults').classList.remove('hidden');
-            document.getElementById('stemOriginalFile').textContent = `Original: ${data.original_filename}`;
-
-            // Display stems
-            const grid = document.getElementById('stemsGrid');
-            grid.innerHTML = '';
-
-            data.stems.forEach(stem => {
-                const colorClass = getStemColor(stem.name);
-                const bgColorClass = getStemBgColor(stem.name);
-                const icon = getStemIcon(stem.name);
-
-                const card = document.createElement('div');
-                const cardBg = isDarkTheme 
-                    ? 'bg-black bg-opacity-40 backdrop-blur-xl rounded-xl border border-purple-500 border-opacity-30 p-6 shadow-xl'
-                    : `bg-white bg-opacity-90 backdrop-blur-xl rounded-xl border ${bgColorClass.split(' ')[1]} p-6 shadow-lg`;
-                card.className = cardBg;
-                card.innerHTML = `
-                    <div class="flex items-center space-x-4 mb-4">
-                        <div class="w-14 h-14 bg-gradient-to-br ${colorClass} rounded-xl flex items-center justify-center text-white">
-                            ${icon}
-                        </div>
-                        <div>
-                            <h4 class="text-xl font-bold ${isDarkTheme ? 'text-gray-200' : 'text-gray-800'} capitalize">${stem.name}</h4>
-                            <p class="text-sm ${isDarkTheme ? 'text-gray-400' : 'text-gray-600'}">Stem Track</p>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <audio controls class="w-full" style="height: 40px;">
-                            <source src="${stem.download_url}" type="audio/wav">
-                            Your browser does not support the audio element.
-                        </audio>
-                        <a href="${stem.download_url}" 
-                           download="${stem.filename}"
-                           class="block w-full py-2 px-4 bg-gradient-to-r ${colorClass} hover:opacity-90 rounded-lg font-semibold text-white text-center transition-all duration-300">
-                            Download ${stem.name.charAt(0).toUpperCase() + stem.name.slice(1)}
-                        </a>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-
-            // Scroll to results
-            document.getElementById('stemResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        // Download all stems as ZIP
-        async function downloadAllStems() {
-            if (!selectedStemFile) {
-                alert('No file to download stems for');
-                return;
-            }
-
-            document.getElementById('downloadAllBtn').disabled = true;
-            document.getElementById('downloadAllBtn').textContent = 'Preparing ZIP...';
-
-            try {
-                const formData = new FormData();
-                formData.append('audio', selectedStemFile);
-
-                const response = await fetch('/split', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                    throw new Error(errorData.error || `Server returned ${response.status}`);
-                }
-
-                // Download the ZIP file
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${selectedStemFile.name.split('.')[0]}_stems.zip`;
-                link.click();
-                URL.revokeObjectURL(url);
-
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to download stems: ' + error.message);
-            } finally {
-                document.getElementById('downloadAllBtn').disabled = false;
-                document.getElementById('downloadAllBtn').textContent = 'Download All Stems (ZIP)';
-            }
-        }
-
-        // Update navigation styling on theme change
-        function updateNavStyling() {
-            const navTonecraft = document.getElementById('navTonecraft');
-            const navStemflow = document.getElementById('navStemflow');
-            const isTonecraftActive = !document.getElementById('tonecraftPage').classList.contains('hidden');
-            
-            const activeNavClass = 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg';
-            const inactiveNavClass = isDarkTheme 
-                ? 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'px-4 py-2 rounded-lg font-semibold transition-all duration-300 bg-blue-100 text-blue-700 hover:bg-blue-200';
-            
-            if (isTonecraftActive) {
-                navTonecraft.className = activeNavClass;
-                navStemflow.className = inactiveNavClass;
-            } else {
-                navStemflow.className = activeNavClass;
-                navTonecraft.className = inactiveNavClass;
-            }
-        }
-    </script>
 </body>
 </html>
