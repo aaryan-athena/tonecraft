@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import gc
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from tone_classifier_wrapper import ToneCraftClassifier
@@ -95,16 +96,25 @@ def run_ai_model(input_data: dict) -> dict:
         
         # Return in the expected format with tone type and confidence
         # Convert numpy types to native Python types for JSON serialization
-        return {
+        result_dict = {
             "PARAMETERS": parameters,
             "tone_type": str(tone_type),
             "confidence": float(confidence)
         }
         
+        # Clean up memory after processing
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
+        
+        return result_dict
+        
     except Exception as e:
         print(f"AI Model: Error during prediction - {str(e)}")
         import traceback
         traceback.print_exc()
+        # Clean up on error too
+        gc.collect()
         return {}
 
 # --- Flask Server Setup ---
@@ -126,6 +136,11 @@ def stemflow_page():
     """Serve the StemFlow stem separation page"""
     return send_from_directory('.', 'stemflow.html')
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({"status": "healthy", "message": "ToneCraft server is running"}), 200
+
 @app.route('/download/plugin')
 def download_plugin():
     """Serve the ToneCraft VST3 plugin for download"""
@@ -145,19 +160,26 @@ def predict():
     This is the main endpoint for the AI server.
     It expects a JSON payload with either a 'text_input' or 'audio_path' key.
     """
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
 
-    content = request.get_json()
-    
-    # Run the AI model with the received content
-    ai_result = run_ai_model(content)
-
-    if not ai_result:
-        return jsonify({"error": "Invalid input to AI model"}), 400
+        content = request.get_json()
         
-    # Return the AI's parameter predictions as a JSON response
-    return jsonify(ai_result)
+        # Run the AI model with the received content
+        ai_result = run_ai_model(content)
+
+        if not ai_result:
+            return jsonify({"error": "Invalid input to AI model"}), 400
+            
+        # Return the AI's parameter predictions as a JSON response
+        return jsonify(ai_result)
+    
+    except Exception as e:
+        print(f"Error in /predict endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 @app.route('/predict_audio', methods=['POST'])
 def predict_audio():
@@ -165,39 +187,48 @@ def predict_audio():
     Endpoint for audio file uploads.
     Accepts multipart/form-data with an 'audio' file.
     """
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-    
-    audio_file = request.files['audio']
-    
-    if audio_file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    # Create uploads directory if it doesn't exist
-    uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
-    os.makedirs(uploads_dir, exist_ok=True)
-    
-    # Save the uploaded file temporarily
-    import time
-    timestamp = int(time.time() * 1000)
-    filename = f"audio_{timestamp}_{audio_file.filename}"
-    filepath = os.path.join(uploads_dir, filename)
-    audio_file.save(filepath)
-    
+    filepath = None
     try:
+        if 'audio' not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
+        
+        audio_file = request.files['audio']
+        
+        if audio_file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Create uploads directory if it doesn't exist
+        uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        # Save the uploaded file temporarily
+        import time
+        timestamp = int(time.time() * 1000)
+        filename = f"audio_{timestamp}_{audio_file.filename}"
+        filepath = os.path.join(uploads_dir, filename)
+        audio_file.save(filepath)
+        
         # Run the AI model with the audio file path
         ai_result = run_ai_model({'audio_path': filepath})
         
         if not ai_result:
-            return jsonify({"error": "Failed to process audio file"}), 400
+            return jsonify({"error": "Failed to process audio file"}), 500
         
         return jsonify(ai_result)
+    
+    except Exception as e:
+        print(f"Error in /predict_audio endpoint: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
     
     finally:
         # Clean up the temporary file
         try:
-            if os.path.exists(filepath):
+            if filepath and os.path.exists(filepath):
                 os.remove(filepath)
+            # Force garbage collection after cleanup
+            gc.collect()
         except Exception as e:
             print(f"Warning: Could not delete temporary file {filepath}: {e}")
 
