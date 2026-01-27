@@ -186,7 +186,14 @@ class MusicToneClassifier:
                 text=["test"], return_tensors="pt", padding=True
             ).to(self.device)
             dummy_embed = self.clap_model.get_text_features(**dummy_text)
-            self.embed_dim = dummy_embed.shape[-1]
+            # Handle both tensor and BaseModelOutputWithPooling returns
+            if hasattr(dummy_embed, 'shape'):
+                self.embed_dim = dummy_embed.shape[-1]
+            elif hasattr(dummy_embed, 'text_embeds'):
+                self.embed_dim = dummy_embed.text_embeds.shape[-1]
+            else:
+                # Fallback: access pooler_output or last_hidden_state
+                self.embed_dim = dummy_embed[0].shape[-1] if isinstance(dummy_embed, tuple) else 512
 
         print(f"[INFO] CLAP embedding dim = {self.embed_dim}")
 
@@ -419,7 +426,11 @@ class MusicToneClassifier:
 
         with torch.no_grad():
             text_embed = self.clap_model.get_text_features(**inputs)
-
+            # Handle both tensor and BaseModelOutputWithPooling returns
+            if hasattr(text_embed, 'text_embeds'):
+                text_embed = text_embed.text_embeds
+            elif not hasattr(text_embed, 'shape'):
+                text_embed = text_embed[0] if isinstance(text_embed, tuple) else text_embed
 
         return text_embed.cpu().numpy()
     

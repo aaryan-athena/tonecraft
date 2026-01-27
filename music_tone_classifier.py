@@ -130,6 +130,11 @@ class MusicToneClassifier:
         
         with torch.no_grad():
             text_embed = self.clap_model.get_text_features(**inputs)
+            # Handle both tensor and BaseModelOutputWithPooling returns
+            if hasattr(text_embed, 'text_embeds'):
+                text_embed = text_embed.text_embeds
+            elif not hasattr(text_embed, 'shape'):
+                text_embed = text_embed[0] if isinstance(text_embed, tuple) else text_embed
             
         return text_embed.numpy()
     
