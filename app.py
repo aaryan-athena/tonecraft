@@ -48,15 +48,25 @@ def run_ai_model(input_data: dict) -> dict:
     Run the trained AI model to predict guitar tone parameters.
     Accepts either 'text_input' (text description) or 'audio_path' (audio file path).
     Returns denormalized parameter values ready for the plugin.
+    Returns dict with 'error' key if something goes wrong.
     """
     try:
         if 'text_input' in input_data:
             text_input = input_data['text_input']
             print(f"AI Model: Processing text prompt -> '{text_input}'", flush=True)
             
+            if not text_input or not isinstance(text_input, str) or not text_input.strip():
+                print("AI Model: Error - Empty or invalid text input", flush=True)
+                return {"error": "Text input cannot be empty"}
+            
             # Use text-to-tone matching
             result = classifier.match_text_to_tone(text_input)
-            print(f"AI Model: Raw result received: {type(result)}", flush=True)
+            print(f"AI Model: Raw result received: {type(result)}, keys: {result.keys() if result else 'None'}", flush=True)
+            
+            if not result or 'knob_settings' not in result:
+                print("AI Model: Error - Invalid result from classifier", flush=True)
+                return {"error": "Model returned invalid result"}
+            
             knob_settings = result['knob_settings']
             tone_type = result['tone_type']
             confidence = result['confidence']
@@ -81,8 +91,8 @@ def run_ai_model(input_data: dict) -> dict:
             print(f"AI Model: Classified as '{tone_type}' tone (confidence: {confidence:.2%})")
             
         else:
-            print("AI Model: Error - Invalid request (missing 'text_input' or 'audio_path')")
-            return {}
+            print("AI Model: Error - Invalid request (missing 'text_input' or 'audio_path')", flush=True)
+            return {"error": "Missing 'text_input' or 'audio_path' in request"}
         
         # Denormalize all parameters to their actual ranges
         parameters = []
@@ -93,7 +103,7 @@ def run_ai_model(input_data: dict) -> dict:
                 "value": round(denormalized_value, 4)
             })
         
-        print(f"AI Model: Generated {len(parameters)} parameters")
+        print(f"AI Model: Generated {len(parameters)} parameters", flush=True)
         
         # Return in the expected format with tone type and confidence
         # Convert numpy types to native Python types for JSON serialization
@@ -111,12 +121,13 @@ def run_ai_model(input_data: dict) -> dict:
         return result_dict
         
     except Exception as e:
-        print(f"AI Model: Error during prediction - {str(e)}")
+        error_msg = str(e)
+        print(f"AI Model: Error during prediction - {error_msg}", flush=True)
         import traceback
         traceback.print_exc()
         # Clean up on error too
         gc.collect()
-        return {}
+        return {"error": f"Model processing failed: {error_msg}"}
 
 # --- Flask Server Setup ---
 app = Flask(__name__)
@@ -166,18 +177,24 @@ def predict():
             return jsonify({"error": "Request must be JSON"}), 400
 
         content = request.get_json()
+        print(f"[/predict] Received request with keys: {list(content.keys())}", flush=True)
         
         # Run the AI model with the received content
         ai_result = run_ai_model(content)
 
-        if not ai_result:
-            return jsonify({"error": "Invalid input to AI model"}), 400
+        # Check if there was an error
+        if "error" in ai_result:
+            print(f"[/predict] Model returned error: {ai_result['error']}", flush=True)
+            return jsonify(ai_result), 400
+        
+        if not ai_result or "PARAMETERS" not in ai_result:
+            return jsonify({"error": "Invalid response from AI model"}), 500
             
         # Return the AI's parameter predictions as a JSON response
         return jsonify(ai_result)
     
     except Exception as e:
-        print(f"Error in /predict endpoint: {str(e)}")
+        print(f"Error in /predict endpoint: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"Server error: {str(e)}"}), 500
