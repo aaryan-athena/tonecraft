@@ -432,26 +432,45 @@ class MusicToneClassifier:
         inputs = {k: v.to(self.device) for k, v in inputs.items()}  # NEW
 
         with torch.no_grad():
-            text_embed = self.clap_model.get_text_features(**inputs)
-            # Handle both tensor and BaseModelOutputWithPooling returns
-            if hasattr(text_embed, 'text_embeds'):
-                text_embed = text_embed.text_embeds
-            elif hasattr(text_embed, 'pooler_output'):
-                text_embed = text_embed.pooler_output
-            elif hasattr(text_embed, 'last_hidden_state'):
-                # Use mean pooling of last hidden state as fallback
-                text_embed = text_embed.last_hidden_state.mean(dim=1)
-            elif isinstance(text_embed, tuple):
-                text_embed = text_embed[0]
-            # If it's still not a tensor, try to get the first value
-            if not hasattr(text_embed, 'cpu'):
-                # Last resort - iterate through the object's values
-                for attr in ['text_embeds', 'pooler_output', 'last_hidden_state']:
-                    if hasattr(text_embed, attr):
-                        val = getattr(text_embed, attr)
-                        if val is not None and hasattr(val, 'cpu'):
-                            text_embed = val
+            raw_output = self.clap_model.get_text_features(**inputs)
+            
+            # Debug: print what we got
+            print(f"[DEBUG] get_text_features returned type: {type(raw_output)}", flush=True)
+            
+            # If it's already a tensor, use it directly
+            if hasattr(raw_output, 'cpu') and hasattr(raw_output, 'numpy'):
+                text_embed = raw_output
+            # Handle BaseModelOutputWithPooling or similar objects
+            elif hasattr(raw_output, 'text_embeds') and raw_output.text_embeds is not None:
+                text_embed = raw_output.text_embeds
+            elif hasattr(raw_output, 'pooler_output') and raw_output.pooler_output is not None:
+                text_embed = raw_output.pooler_output
+            elif hasattr(raw_output, 'last_hidden_state') and raw_output.last_hidden_state is not None:
+                text_embed = raw_output.last_hidden_state.mean(dim=1)
+            elif isinstance(raw_output, tuple) and len(raw_output) > 0:
+                text_embed = raw_output[0]
+            elif isinstance(raw_output, dict):
+                # Try common keys
+                for key in ['text_embeds', 'pooler_output', 'last_hidden_state', 'embedding']:
+                    if key in raw_output and raw_output[key] is not None:
+                        text_embed = raw_output[key]
+                        break
+                else:
+                    # Get first tensor value from dict
+                    for v in raw_output.values():
+                        if hasattr(v, 'cpu'):
+                            text_embed = v
                             break
+            else:
+                # Last resort: try to access values() if it's an object with __dict__
+                print(f"[DEBUG] Object attributes: {dir(raw_output)}", flush=True)
+                if hasattr(raw_output, '__iter__'):
+                    for item in raw_output:
+                        if hasattr(item, 'cpu'):
+                            text_embed = item
+                            break
+                else:
+                    raise ValueError(f"Cannot extract tensor from {type(raw_output)}")
 
         return text_embed.cpu().numpy()
     
