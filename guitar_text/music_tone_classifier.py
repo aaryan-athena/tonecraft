@@ -429,50 +429,69 @@ class MusicToneClassifier:
     def extract_text_features(self, text_list):
         """Extract CLAP embeddings from text descriptions"""
         inputs = self.clap_processor(text=text_list, return_tensors="pt", padding=True)
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}  # NEW
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
             raw_output = self.clap_model.get_text_features(**inputs)
             
-            # Debug: print what we got
-            print(f"[DEBUG] get_text_features returned type: {type(raw_output)}", flush=True)
+            print(f"[DEBUG] get_text_features returned: {type(raw_output)}", flush=True)
             
-            # If it's already a tensor, use it directly
-            if hasattr(raw_output, 'cpu') and hasattr(raw_output, 'numpy'):
-                text_embed = raw_output
-            # Handle BaseModelOutputWithPooling or similar objects
-            elif hasattr(raw_output, 'text_embeds') and raw_output.text_embeds is not None:
-                text_embed = raw_output.text_embeds
-            elif hasattr(raw_output, 'pooler_output') and raw_output.pooler_output is not None:
-                text_embed = raw_output.pooler_output
-            elif hasattr(raw_output, 'last_hidden_state') and raw_output.last_hidden_state is not None:
-                text_embed = raw_output.last_hidden_state.mean(dim=1)
-            elif isinstance(raw_output, tuple) and len(raw_output) > 0:
-                text_embed = raw_output[0]
-            elif isinstance(raw_output, dict):
-                # Try common keys
-                for key in ['text_embeds', 'pooler_output', 'last_hidden_state', 'embedding']:
-                    if key in raw_output and raw_output[key] is not None:
-                        text_embed = raw_output[key]
-                        break
-                else:
-                    # Get first tensor value from dict
-                    for v in raw_output.values():
-                        if hasattr(v, 'cpu'):
-                            text_embed = v
-                            break
-            else:
-                # Last resort: try to access values() if it's an object with __dict__
-                print(f"[DEBUG] Object attributes: {dir(raw_output)}", flush=True)
-                if hasattr(raw_output, '__iter__'):
-                    for item in raw_output:
-                        if hasattr(item, 'cpu'):
-                            text_embed = item
-                            break
-                else:
-                    raise ValueError(f"Cannot extract tensor from {type(raw_output)}")
+            # Extract tensor from output - handle all possible formats
+            text_embed = self._extract_tensor_from_output(raw_output)
+            
+            if text_embed is None:
+                raise ValueError(f"Could not extract tensor from {type(raw_output)}")
 
         return text_embed.cpu().numpy()
+    
+    def _extract_tensor_from_output(self, output):
+        """Helper to extract tensor from various CLAP output formats"""
+        import torch
+        
+        # Case 1: Already a tensor
+        if isinstance(output, torch.Tensor):
+            print("[DEBUG] Output is already a tensor", flush=True)
+            return output
+        
+        # Case 2: Has common embedding attributes
+        attr_names = ['text_embeds', 'pooler_output', 'last_hidden_state', 'embedding', 'embeddings']
+        for attr in attr_names:
+            if hasattr(output, attr):
+                val = getattr(output, attr)
+                if val is not None and isinstance(val, torch.Tensor):
+                    print(f"[DEBUG] Found tensor in attribute: {attr}", flush=True)
+                    if attr == 'last_hidden_state':
+                        return val.mean(dim=1)  # Mean pooling
+                    return val
+        
+        # Case 3: Tuple or list
+        if isinstance(output, (tuple, list)) and len(output) > 0:
+            for i, item in enumerate(output):
+                if isinstance(item, torch.Tensor):
+                    print(f"[DEBUG] Found tensor at index {i}", flush=True)
+                    return item
+        
+        # Case 4: Dict-like
+        if isinstance(output, dict):
+            for k, v in output.items():
+                if isinstance(v, torch.Tensor):
+                    print(f"[DEBUG] Found tensor in dict key: {k}", flush=True)
+                    return v
+        
+        # Case 5: Iterate through all attributes looking for a tensor
+        print(f"[DEBUG] Searching all attributes: {[a for a in dir(output) if not a.startswith('_')]}", flush=True)
+        for attr in dir(output):
+            if attr.startswith('_'):
+                continue
+            try:
+                val = getattr(output, attr)
+                if isinstance(val, torch.Tensor) and val.dim() >= 2:
+                    print(f"[DEBUG] Found tensor in attribute: {attr}, shape: {val.shape}", flush=True)
+                    return val
+            except:
+                pass
+        
+        return None
     
     def _discover_datasets(self):
         """
