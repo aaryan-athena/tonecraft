@@ -242,14 +242,16 @@ def load_demucs_model():
     global demucs_model, demucs_device
     if demucs_model is None:
         try:
-            print("Loading Demucs model...")
+            print("Loading Demucs model...", flush=True)
             model_name = 'htdemucs'  # Valid model name for 4-stem configuration
             demucs_model = get_model(model_name)
             demucs_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             demucs_model.to(demucs_device)
-            print(f"Demucs model loaded successfully on {demucs_device}!")
+            print(f"Demucs model loaded successfully on {demucs_device}!", flush=True)
         except Exception as e:
-            print(f"Error loading Demucs model: {e}")
+            print(f"Error loading Demucs model: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
             raise ValueError(f"Error loading model: {e}")
     return demucs_model, demucs_device
 
@@ -313,40 +315,49 @@ def split_audio():
     Accepts multipart/form-data with an 'audio' file.
     Returns a ZIP file containing all separated stems.
     """
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-    
-    audio_file = request.files['audio']
-    
-    if audio_file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    # Create uploads directory if it doesn't exist
-    uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
-    os.makedirs(uploads_dir, exist_ok=True)
-    
-    # Save the uploaded file temporarily
-    import time
-    timestamp = int(time.time() * 1000)
-    original_filename = os.path.splitext(audio_file.filename)[0]
-    filename = f"split_{timestamp}_{audio_file.filename}"
-    filepath = os.path.join(uploads_dir, filename)
-    audio_file.save(filepath)
-    
+    filepath = None
     wav_file_path = None
     
     try:
+        if 'audio' not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
+        
+        audio_file = request.files['audio']
+        
+        if audio_file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        print(f"[StemFlow] Processing file: {audio_file.filename}", flush=True)
+        
+        # Create uploads directory if it doesn't exist
+        uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        # Save the uploaded file temporarily
+        import time
+        timestamp = int(time.time() * 1000)
+        original_filename = os.path.splitext(audio_file.filename)[0]
+        filename = f"split_{timestamp}_{audio_file.filename}"
+        filepath = os.path.join(uploads_dir, filename)
+        audio_file.save(filepath)
+        print(f"[StemFlow] File saved to: {filepath}", flush=True)
+        
         # Load Demucs model
+        print("[StemFlow] Loading Demucs model...", flush=True)
         model, device = load_demucs_model()
         
         # Convert input file to WAV if necessary
+        print("[StemFlow] Converting to WAV...", flush=True)
         wav_file_path = convert_to_wav(filepath)
         
         # Load audio into torch format
+        print("[StemFlow] Loading audio for processing...", flush=True)
         wav, sample_rate = load_audio_for_demucs(wav_file_path)
         
         # Perform stem separation
+        print("[StemFlow] Starting stem separation (this may take a while)...", flush=True)
         stems = separate_stems(model, wav, device)
+        print("[StemFlow] Stem separation complete!", flush=True)
         
         # Stem names for the 4-stem configuration
         stem_names = ["drums", "bass", "other", "vocals"]
@@ -362,6 +373,13 @@ def split_audio():
                 zip_file.writestr(f"{original_filename}_{stem_name}.wav", stem_buffer.read())
         
         zip_buffer.seek(0)
+        print(f"[StemFlow] Successfully created ZIP with {len(stem_files)} stems", flush=True)
+        
+        # Clean up memory
+        del stems, wav
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
         
         return send_file(
             zip_buffer,
@@ -371,7 +389,7 @@ def split_audio():
         )
         
     except Exception as e:
-        print(f"Error during stem separation: {e}")
+        print(f"[StemFlow] Error during stem separation: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"Failed to process audio: {str(e)}"}), 500
@@ -379,12 +397,13 @@ def split_audio():
     finally:
         # Clean up temporary files
         try:
-            if os.path.exists(filepath):
+            if filepath and os.path.exists(filepath):
                 os.remove(filepath)
             if wav_file_path and os.path.exists(wav_file_path):
                 os.remove(wav_file_path)
+            gc.collect()
         except Exception as e:
-            print(f"Warning: Could not delete temporary files: {e}")
+            print(f\"Warning: Could not delete temporary files: {e}\", flush=True)
 
 @app.route('/split_individual', methods=['POST'])
 def split_audio_individual():
@@ -392,40 +411,48 @@ def split_audio_individual():
     Endpoint for audio stem separation that returns individual stems info.
     Use this for previewing stems before downloading.
     """
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-    
-    audio_file = request.files['audio']
-    
-    if audio_file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    # Create uploads directory if it doesn't exist
-    uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
-    os.makedirs(uploads_dir, exist_ok=True)
-    
-    # Save the uploaded file temporarily
-    import time
-    timestamp = int(time.time() * 1000)
-    original_filename = os.path.splitext(audio_file.filename)[0]
-    filename = f"split_{timestamp}_{audio_file.filename}"
-    filepath = os.path.join(uploads_dir, filename)
-    audio_file.save(filepath)
-    
+    filepath = None
     wav_file_path = None
     
     try:
+        if 'audio' not in request.files:
+            return jsonify({"error": "No audio file provided"}), 400
+        
+        audio_file = request.files['audio']
+        
+        if audio_file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        print(f"[StemFlow Individual] Processing file: {audio_file.filename}", flush=True)
+        
+        # Create uploads directory if it doesn't exist
+        uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        # Save the uploaded file temporarily
+        import time
+        timestamp = int(time.time() * 1000)
+        original_filename = os.path.splitext(audio_file.filename)[0]
+        filename = f"split_{timestamp}_{audio_file.filename}"
+        filepath = os.path.join(uploads_dir, filename)
+        audio_file.save(filepath)
+        
         # Load Demucs model
+        print("[StemFlow Individual] Loading Demucs model...", flush=True)
         model, device = load_demucs_model()
         
         # Convert input file to WAV if necessary
+        print("[StemFlow Individual] Converting to WAV...", flush=True)
         wav_file_path = convert_to_wav(filepath)
         
         # Load audio into torch format
+        print("[StemFlow Individual] Loading audio...", flush=True)
         wav, sample_rate = load_audio_for_demucs(wav_file_path)
         
         # Perform stem separation
+        print("[StemFlow Individual] Starting stem separation...", flush=True)
         stems = separate_stems(model, wav, device)
+        print("[StemFlow Individual] Stem separation complete!", flush=True)
         
         # Stem names for the 4-stem configuration
         stem_names = ["drums", "bass", "other", "vocals"]
@@ -446,6 +473,14 @@ def split_audio_individual():
                 "download_url": f"/download_stem/{stem_filename}"
             })
         
+        # Clean up memory
+        del stems, wav
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
+        
+        print(f"[StemFlow Individual] Successfully processed {len(stem_info)} stems", flush=True)
+        
         return jsonify({
             "success": True,
             "original_filename": original_filename,
@@ -453,7 +488,7 @@ def split_audio_individual():
         })
         
     except Exception as e:
-        print(f"Error during stem separation: {e}")
+        print(f"[StemFlow Individual] Error during stem separation: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"Failed to process audio: {str(e)}"}), 500
@@ -461,12 +496,13 @@ def split_audio_individual():
     finally:
         # Clean up original input files (keep stem files for download)
         try:
-            if os.path.exists(filepath):
+            if filepath and os.path.exists(filepath):
                 os.remove(filepath)
             if wav_file_path and os.path.exists(wav_file_path):
                 os.remove(wav_file_path)
+            gc.collect()
         except Exception as e:
-            print(f"Warning: Could not delete temporary files: {e}")
+            print(f"Warning: Could not delete temporary files: {e}", flush=True)
 
 @app.route('/download_stem/<filename>')
 def download_stem(filename):
