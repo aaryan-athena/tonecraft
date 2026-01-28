@@ -189,11 +189,18 @@ class MusicToneClassifier:
             # Handle both tensor and BaseModelOutputWithPooling returns
             if hasattr(dummy_embed, 'shape'):
                 self.embed_dim = dummy_embed.shape[-1]
-            elif hasattr(dummy_embed, 'text_embeds'):
+            elif hasattr(dummy_embed, 'text_embeds') and dummy_embed.text_embeds is not None:
                 self.embed_dim = dummy_embed.text_embeds.shape[-1]
+            elif hasattr(dummy_embed, 'pooler_output') and dummy_embed.pooler_output is not None:
+                self.embed_dim = dummy_embed.pooler_output.shape[-1]
+            elif hasattr(dummy_embed, 'last_hidden_state') and dummy_embed.last_hidden_state is not None:
+                self.embed_dim = dummy_embed.last_hidden_state.shape[-1]
+            elif isinstance(dummy_embed, tuple):
+                self.embed_dim = dummy_embed[0].shape[-1]
             else:
-                # Fallback: access pooler_output or last_hidden_state
-                self.embed_dim = dummy_embed[0].shape[-1] if isinstance(dummy_embed, tuple) else 512
+                # Fallback to default CLAP dimension
+                self.embed_dim = 512
+                print(f"[WARN] Could not detect embed_dim, using default: {self.embed_dim}")
 
         print(f"[INFO] CLAP embedding dim = {self.embed_dim}")
 
@@ -429,8 +436,22 @@ class MusicToneClassifier:
             # Handle both tensor and BaseModelOutputWithPooling returns
             if hasattr(text_embed, 'text_embeds'):
                 text_embed = text_embed.text_embeds
-            elif not hasattr(text_embed, 'shape'):
-                text_embed = text_embed[0] if isinstance(text_embed, tuple) else text_embed
+            elif hasattr(text_embed, 'pooler_output'):
+                text_embed = text_embed.pooler_output
+            elif hasattr(text_embed, 'last_hidden_state'):
+                # Use mean pooling of last hidden state as fallback
+                text_embed = text_embed.last_hidden_state.mean(dim=1)
+            elif isinstance(text_embed, tuple):
+                text_embed = text_embed[0]
+            # If it's still not a tensor, try to get the first value
+            if not hasattr(text_embed, 'cpu'):
+                # Last resort - iterate through the object's values
+                for attr in ['text_embeds', 'pooler_output', 'last_hidden_state']:
+                    if hasattr(text_embed, attr):
+                        val = getattr(text_embed, attr)
+                        if val is not None and hasattr(val, 'cpu'):
+                            text_embed = val
+                            break
 
         return text_embed.cpu().numpy()
     
