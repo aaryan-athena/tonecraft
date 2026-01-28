@@ -52,15 +52,16 @@ def run_ai_model(input_data: dict) -> dict:
     try:
         if 'text_input' in input_data:
             text_input = input_data['text_input']
-            print(f"AI Model: Processing text prompt -> '{text_input}'")
+            print(f"AI Model: Processing text prompt -> '{text_input}'", flush=True)
             
             # Use text-to-tone matching
             result = classifier.match_text_to_tone(text_input)
+            print(f"AI Model: Raw result received: {type(result)}", flush=True)
             knob_settings = result['knob_settings']
             tone_type = result['tone_type']
             confidence = result['confidence']
             
-            print(f"AI Model: Matched to '{tone_type}' tone (confidence: {confidence:.2%})")
+            print(f"AI Model: Matched to '{tone_type}' tone (confidence: {float(confidence):.2%})", flush=True)
             
         elif 'audio_path' in input_data:
             audio_path = input_data['audio_path']

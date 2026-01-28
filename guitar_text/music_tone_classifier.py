@@ -1335,8 +1335,13 @@ class MusicToneClassifier:
             )
             similarities[tone_type] = similarity
         
-        best_tone = max(similarities, key=similarities.get)
-        confidence = similarities[best_tone]
+        # Handle empty tone_embeddings case
+        if similarities:
+            best_tone = max(similarities, key=similarities.get)
+            confidence = float(similarities[best_tone])
+        else:
+            best_tone = "Custom"
+            confidence = 0.5
         
         return {
             'tone_type': best_tone,  # For reference only
@@ -1549,6 +1554,7 @@ class MusicToneClassifier:
         # Load neural network
         net_path = os.path.join(save_dir, 'knob_regressor_net.pth')
         if os.path.exists(net_path):
+            print(f"[LOAD] Loading knob_regressor_net from {net_path}", flush=True)
             self.knob_regressor_net = KnobParameterNet(
                 input_dim=self.embed_dim, 
                 hidden_dims=[256, 128, 64], 
@@ -1556,19 +1562,29 @@ class MusicToneClassifier:
             ).to(self.device)
             self.knob_regressor_net.load_state_dict(torch.load(net_path, map_location=self.device))
             self.knob_regressor_net.eval()
+            print(f"[LOAD] knob_regressor_net loaded successfully", flush=True)
+        else:
+            print(f"[WARN] knob_regressor_net.pth not found at {net_path}", flush=True)
         
         # Load scaler
         with open(os.path.join(save_dir, 'knob_scaler.pkl'), 'rb') as f:
             self.knob_scaler = pickle.load(f)
+        print(f"[LOAD] knob_scaler loaded", flush=True)
         
-        with open(os.path.join(save_dir, 'tone_embeddings.pkl'), 'rb') as f:
-            self.tone_embeddings = pickle.load(f)
+        tone_embed_path = os.path.join(save_dir, 'tone_embeddings.pkl')
+        if os.path.exists(tone_embed_path):
+            with open(tone_embed_path, 'rb') as f:
+                self.tone_embeddings = pickle.load(f)
+            print(f"[LOAD] tone_embeddings loaded with {len(self.tone_embeddings)} tones: {list(self.tone_embeddings.keys())}", flush=True)
+        else:
+            print(f"[WARN] tone_embeddings.pkl not found at {tone_embed_path}", flush=True)
+            self.tone_embeddings = {}
         
         # NOTE: Do NOT load dataset here. Inference must work without index CSVs.
         # Training code will call load_data() explicitly.
         pass
         
-        print(f"Models loaded from {save_dir}/")
+        print(f"Models loaded from {save_dir}/", flush=True)
 
 def main():
     # Initialize classifier
