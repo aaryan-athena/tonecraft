@@ -403,7 +403,7 @@ def split_audio():
                 os.remove(wav_file_path)
             gc.collect()
         except Exception as e:
-            print(f\"Warning: Could not delete temporary files: {e}\", flush=True)
+            print(f"Warning: Could not delete temporary files: {e}", flush=True)
 
 @app.route('/split_individual', methods=['POST'])
 def split_audio_individual():
