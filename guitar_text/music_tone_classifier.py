@@ -181,26 +181,25 @@ class MusicToneClassifier:
         print(f"[INFO] Using CLAP backbone: {CLAP_MODEL_ID}")
 
         # Detect CLAP embedding dimension dynamically (IMPORTANT)
+        # Use text_model + projection for reliable dimension detection
         with torch.no_grad():
             dummy_text = self.clap_processor(
                 text=["test"], return_tensors="pt", padding=True
             ).to(self.device)
-            dummy_embed = self.clap_model.get_text_features(**dummy_text)
-            # Handle both tensor and BaseModelOutputWithPooling returns
-            if hasattr(dummy_embed, 'shape'):
-                self.embed_dim = dummy_embed.shape[-1]
-            elif hasattr(dummy_embed, 'text_embeds') and dummy_embed.text_embeds is not None:
-                self.embed_dim = dummy_embed.text_embeds.shape[-1]
-            elif hasattr(dummy_embed, 'pooler_output') and dummy_embed.pooler_output is not None:
-                self.embed_dim = dummy_embed.pooler_output.shape[-1]
-            elif hasattr(dummy_embed, 'last_hidden_state') and dummy_embed.last_hidden_state is not None:
-                self.embed_dim = dummy_embed.last_hidden_state.shape[-1]
-            elif isinstance(dummy_embed, tuple):
-                self.embed_dim = dummy_embed[0].shape[-1]
+            
+            # Use text_model directly
+            text_outputs = self.clap_model.text_model(**dummy_text)
+            
+            if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None:
+                text_embed = text_outputs.pooler_output
             else:
-                # Fallback to default CLAP dimension
-                self.embed_dim = 512
-                print(f"[WARN] Could not detect embed_dim, using default: {self.embed_dim}")
+                text_embed = text_outputs.last_hidden_state[:, 0, :]
+            
+            # Apply text projection if available (this is what get_text_features does internally)
+            if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
+                text_embed = self.clap_model.text_projection(text_embed)
+            
+            self.embed_dim = text_embed.shape[-1]
 
         print(f"[INFO] CLAP embedding dim = {self.embed_dim}")
 
@@ -432,66 +431,22 @@ class MusicToneClassifier:
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            raw_output = self.clap_model.get_text_features(**inputs)
+            # Use the text model directly instead of get_text_features
+            # This is more reliable across different transformers versions
+            text_outputs = self.clap_model.text_model(**inputs)
             
-            print(f"[DEBUG] get_text_features returned: {type(raw_output)}", flush=True)
+            # Get the pooler output or use CLS token
+            if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None:
+                text_embed = text_outputs.pooler_output
+            else:
+                # Use the [CLS] token (first token) from last hidden state
+                text_embed = text_outputs.last_hidden_state[:, 0, :]
             
-            # Extract tensor from output - handle all possible formats
-            text_embed = self._extract_tensor_from_output(raw_output)
-            
-            if text_embed is None:
-                raise ValueError(f"Could not extract tensor from {type(raw_output)}")
+            # Apply text projection if available
+            if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
+                text_embed = self.clap_model.text_projection(text_embed)
 
         return text_embed.cpu().numpy()
-    
-    def _extract_tensor_from_output(self, output):
-        """Helper to extract tensor from various CLAP output formats"""
-        import torch
-        
-        # Case 1: Already a tensor
-        if isinstance(output, torch.Tensor):
-            print("[DEBUG] Output is already a tensor", flush=True)
-            return output
-        
-        # Case 2: Has common embedding attributes
-        attr_names = ['text_embeds', 'pooler_output', 'last_hidden_state', 'embedding', 'embeddings']
-        for attr in attr_names:
-            if hasattr(output, attr):
-                val = getattr(output, attr)
-                if val is not None and isinstance(val, torch.Tensor):
-                    print(f"[DEBUG] Found tensor in attribute: {attr}", flush=True)
-                    if attr == 'last_hidden_state':
-                        return val.mean(dim=1)  # Mean pooling
-                    return val
-        
-        # Case 3: Tuple or list
-        if isinstance(output, (tuple, list)) and len(output) > 0:
-            for i, item in enumerate(output):
-                if isinstance(item, torch.Tensor):
-                    print(f"[DEBUG] Found tensor at index {i}", flush=True)
-                    return item
-        
-        # Case 4: Dict-like
-        if isinstance(output, dict):
-            for k, v in output.items():
-                if isinstance(v, torch.Tensor):
-                    print(f"[DEBUG] Found tensor in dict key: {k}", flush=True)
-                    return v
-        
-        # Case 5: Iterate through all attributes looking for a tensor
-        print(f"[DEBUG] Searching all attributes: {[a for a in dir(output) if not a.startswith('_')]}", flush=True)
-        for attr in dir(output):
-            if attr.startswith('_'):
-                continue
-            try:
-                val = getattr(output, attr)
-                if isinstance(val, torch.Tensor) and val.dim() >= 2:
-                    print(f"[DEBUG] Found tensor in attribute: {attr}, shape: {val.shape}", flush=True)
-                    return val
-            except:
-                pass
-        
-        return None
     
     def _discover_datasets(self):
         """
