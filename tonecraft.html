@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToneCraft AI - Guitar Tone Generator</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎵</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -264,10 +265,6 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <div class="text-right">
-                            <p class="text-sm text-gray-400">Confidence</p>
-                            <p class="text-2xl font-bold text-orange-400" id="confidence">N/A</p>
-                        </div>
                         <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
@@ -486,7 +483,6 @@
 
             document.getElementById('results').classList.remove('hidden');
             document.getElementById('toneType').textContent = data.tone_type || 'Custom Tone';
-            document.getElementById('confidence').textContent = data.confidence ? `${(data.confidence * 100).toFixed(1)}%` : 'N/A';
 
             document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
