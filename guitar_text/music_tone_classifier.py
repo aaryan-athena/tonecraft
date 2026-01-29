@@ -181,28 +181,23 @@ class MusicToneClassifier:
         print(f"[INFO] Using CLAP backbone: {CLAP_MODEL_ID}")
 
         # Detect CLAP embedding dimension dynamically (IMPORTANT)
-        # Use get_text_features for reliable dimension detection
+        # Use text_model + text_projection explicitly for consistent results across transformers versions
         with torch.no_grad():
             dummy_text = self.clap_processor(
                 text=["test"], return_tensors="pt", padding=True
             ).to(self.device)
             
-            # Use get_text_features directly
-            text_embed = self.clap_model.get_text_features(**dummy_text)
+            # Use text_model directly to avoid version-specific get_text_features behavior
+            text_outputs = self.clap_model.text_model(**dummy_text)
             
-            # --- ROBUSTNESS FIX ---
-            if not isinstance(text_embed, torch.Tensor):
-                if hasattr(text_embed, 'pooler_output') and text_embed.pooler_output is not None:
-                    text_embed = text_embed.pooler_output
-                elif hasattr(text_embed, 'text_embeds'):
-                    text_embed = text_embed.text_embeds
-                elif hasattr(text_embed, 'last_hidden_state'):
-                    text_embed = text_embed.last_hidden_state[:, 0, :]
-                
-                # Apply text projection if available
-                if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
-                    text_embed = self.clap_model.text_projection(text_embed)
-            # ----------------------
+            if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None:
+                text_embed = text_outputs.pooler_output
+            else:
+                text_embed = text_outputs.last_hidden_state[:, 0, :]
+            
+            # Apply text projection (768 -> 512)
+            if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
+                text_embed = self.clap_model.text_projection(text_embed)
             
             self.embed_dim = text_embed.shape[-1]
 
@@ -436,27 +431,17 @@ class MusicToneClassifier:
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
-            # Use get_text_features directly which is the standard API
-            text_embed = self.clap_model.get_text_features(**inputs)
+            # Use text_model directly to avoid version-specific get_text_features behavior
+            text_outputs = self.clap_model.text_model(**inputs)
             
-            # --- ROBUSTNESS FIX ---
-            # Handle case where output is a ModelOutput object instead of Tensor
-            # This can happen in certain environments or transformers versions
-            if not isinstance(text_embed, torch.Tensor):
-                print(f"[DEBUG] text_embed is type {type(text_embed)}, extracting tensor...", flush=True)
-                if hasattr(text_embed, 'pooler_output') and text_embed.pooler_output is not None:
-                    text_embed = text_embed.pooler_output
-                elif hasattr(text_embed, 'image_embeds'): # In case of mixup
-                    text_embed = text_embed.image_embeds
-                elif hasattr(text_embed, 'text_embeds'):
-                    text_embed = text_embed.text_embeds
-                elif hasattr(text_embed, 'last_hidden_state'):
-                    text_embed = text_embed.last_hidden_state[:, 0, :]
-                
-                # Apply text projection if available (critical for matching audio space)
-                if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
-                    text_embed = self.clap_model.text_projection(text_embed)
-            # ----------------------
+            if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None:
+                text_embed = text_outputs.pooler_output
+            else:
+                text_embed = text_outputs.last_hidden_state[:, 0, :]
+            
+            # Apply text projection (768 -> 512)
+            if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
+                text_embed = self.clap_model.text_projection(text_embed)
 
         return text_embed.cpu().numpy()
     
