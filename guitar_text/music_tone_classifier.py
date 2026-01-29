@@ -180,28 +180,28 @@ class MusicToneClassifier:
         print("Using device:", self.device)
         print(f"[INFO] Using CLAP backbone: {CLAP_MODEL_ID}")
 
-        # Detect CLAP embedding dimension dynamically (IMPORTANT)
-        # Use text_model + text_projection explicitly for consistent results across transformers versions
+        # Detect CLAP embedding dimension dynamically
         with torch.no_grad():
-            dummy_text = self.clap_processor(
+            dummy_inputs = self.clap_processor(
                 text=["test"], return_tensors="pt", padding=True
-            ).to(self.device)
+            )
+            dummy_inputs = {k: v.to(self.device) for k, v in dummy_inputs.items()}
             
-            # Use text_model directly to avoid version-specific get_text_features behavior
-            text_outputs = self.clap_model.text_model(**dummy_text)
+            # Get text embeddings the same way as extract_text_features
+            text_outputs = self.clap_model.text_model(**dummy_inputs)
+            text_embed = text_outputs.pooler_output if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None else text_outputs.last_hidden_state[:, 0, :]
             
-            if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None:
-                text_embed = text_outputs.pooler_output
-            else:
-                text_embed = text_outputs.last_hidden_state[:, 0, :]
-            
-            # Apply text projection (768 -> 512)
-            if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
+            # CRITICAL: Apply projection to get 512-dim
+            if hasattr(self.clap_model, 'text_projection'):
                 text_embed = self.clap_model.text_projection(text_embed)
             
             self.embed_dim = text_embed.shape[-1]
+            print(f"[INFO] CLAP embedding dim = {self.embed_dim}")
+            
+            # Verify dimension
+            if self.embed_dim != 512:
+                print(f"[WARNING] Expected 512-dim but got {self.embed_dim}-dim. Check model compatibility!")
 
-        print(f"[INFO] CLAP embedding dim = {self.embed_dim}")
 
         # Initialize components
         self.df = None
@@ -427,23 +427,29 @@ class MusicToneClassifier:
             
     def extract_text_features(self, text_list):
         """Extract CLAP embeddings from text descriptions"""
-        inputs = self.clap_processor(text=text_list, return_tensors="pt", padding=True)
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        try:
+            inputs = self.clap_processor(text=text_list, return_tensors="pt", padding=True)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        with torch.no_grad():
-            # Use text_model directly to avoid version-specific get_text_features behavior
-            text_outputs = self.clap_model.text_model(**inputs)
-            
-            if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None:
-                text_embed = text_outputs.pooler_output
-            else:
-                text_embed = text_outputs.last_hidden_state[:, 0, :]
-            
-            # Apply text projection (768 -> 512)
-            if hasattr(self.clap_model, 'text_projection') and self.clap_model.text_projection is not None:
-                text_embed = self.clap_model.text_projection(text_embed)
-
-        return text_embed.cpu().numpy()
+            with torch.no_grad():
+                # Get text encoder output
+                text_outputs = self.clap_model.text_model(**inputs)
+                text_embed = text_outputs.pooler_output if hasattr(text_outputs, 'pooler_output') and text_outputs.pooler_output is not None else text_outputs.last_hidden_state[:, 0, :]
+                
+                # Apply projection to get 512-dim
+                if hasattr(self.clap_model, 'text_projection'):
+                    text_embed = self.clap_model.text_projection(text_embed)
+                
+                result = text_embed.cpu().numpy()
+                print(f"[DEBUG] Extracted text features shape: {result.shape}", flush=True)
+                return result
+                
+        except Exception as e:
+            print(f"[ERROR] extract_text_features failed: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
+            # Return zero vector as fallback
+            return np.zeros((len(text_list), self.embed_dim), dtype=np.float32)
     
     def _discover_datasets(self):
         """
