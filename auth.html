@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToneCraft AI - Sign In</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎵</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#fef7ee', 100: '#fdedd3', 200: '#f9d7a5', 300: '#f4b96d', 400: '#ee9132', 500: '#ea760f', 600: '#db5d09', 700: '#b6440a', 800: '#91360f' },
+                        accent: { 500: '#f59e0b', 600: '#d97706' },
+                        dark: { 800: '#1a1a2e', 900: '#0f0f1a' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .guitar-bg {
+            background-image:
+                radial-gradient(ellipse at 20% 80%, rgba(234, 118, 15, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+        }
+    </style>
+
+    <!-- Firebase SDK (compat mode) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+    <script src="/js/firebase-config.js"></script>
+    <script src="/static/js/auth.js"></script>
+</head>
+<body class="bg-dark-900 text-white guitar-bg min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-dark-900/80 backdrop-blur-xl border-b border-orange-500/20">
+        <div class="container mx-auto px-4 md:px-6 py-3 md:py-4">
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center space-x-2 md:space-x-3 group">
+                    <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-orange-500/30 transition-shadow">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                        </svg>
+                    </div>
+                    <div class="hidden sm:block">
+                        <h1 class="text-lg md:text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">ToneCraft</h1>
+                    </div>
+                </a>
+                <a href="/" class="px-3 py-2 md:px-4 md:py-2 text-gray-400 hover:text-white transition-colors font-medium text-sm md:text-base">Home</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Auth Card -->
+    <main class="container mx-auto px-4 md:px-6 py-12 md:py-20 flex items-center justify-center">
+        <div class="w-full max-w-md">
+            <div class="bg-white/5 backdrop-blur-xl rounded-2xl border border-orange-500/20 p-6 md:p-8 shadow-2xl">
+
+                <!-- Header -->
+                <div class="text-center mb-6 md:mb-8">
+                    <div class="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-bold">Welcome Back</h2>
+                    <p class="text-gray-400 text-sm mt-2">Sign in to access ToneCraft & StemFlow</p>
+                </div>
+
+                <!-- Tab Selection -->
+                <div class="flex space-x-2 mb-6">
+                    <button id="loginTab" onclick="showLoginForm()" class="flex-1 py-2.5 px-4 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg text-sm">
+                        Sign In
+                    </button>
+                    <button id="signupTab" onclick="showSignupForm()" class="flex-1 py-2.5 px-4 rounded-xl font-semibold transition-all duration-300 bg-white/10 text-gray-300 hover:bg-white/20 text-sm">
+                        Sign Up
+                    </button>
+                </div>
+
+                <!-- Error Message -->
+                <div id="authError" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm"></div>
+
+                <!-- Login Form -->
+                <form id="loginForm" onsubmit="loginWithEmail(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                        <input type="email" id="loginEmail" required
+                            class="w-full px-4 py-3 bg-dark-900/50 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-white placeholder-gray-500"
+                            placeholder="your@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                        <input type="password" id="loginPassword" required
+                            class="w-full px-4 py-3 bg-dark-900/50 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-white placeholder-gray-500"
+                            placeholder="Enter your password">
+                    </div>
+                    <button type="submit" id="loginBtn"
+                        class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold transition-all shadow-lg hover:shadow-orange-500/30 flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                        </svg>
+                        <span>Sign In</span>
+                    </button>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signupForm" onsubmit="signupWithEmail(event)" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                        <input type="email" id="signupEmail" required
+                            class="w-full px-4 py-3 bg-dark-900/50 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-white placeholder-gray-500"
+                            placeholder="your@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                        <input type="password" id="signupPassword" required minlength="6"
+                            class="w-full px-4 py-3 bg-dark-900/50 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-white placeholder-gray-500"
+                            placeholder="At least 6 characters">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+                        <input type="password" id="signupConfirm" required minlength="6"
+                            class="w-full px-4 py-3 bg-dark-900/50 border border-white/10 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-white placeholder-gray-500"
+                            placeholder="Confirm your password">
+                    </div>
+                    <button type="submit" id="signupBtn"
+                        class="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold transition-all shadow-lg hover:shadow-orange-500/30 flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                        <span>Create Account</span>
+                    </button>
+                </form>
+
+                <!-- Divider -->
+                <div class="flex items-center my-6">
+                    <div class="flex-1 h-px bg-white/10"></div>
+                    <span class="px-4 text-sm text-gray-500">or continue with</span>
+                    <div class="flex-1 h-px bg-white/10"></div>
+                </div>
+
+                <!-- Google Sign-In -->
+                <button onclick="signInWithGoogle()" id="googleBtn"
+                    class="w-full py-3 px-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl font-semibold transition-all flex items-center justify-center space-x-3">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                </button>
+            </div>
+
+            <!-- Footer text -->
+            <p class="text-center text-gray-500 text-xs mt-6">
+                By signing in, you agree to our Terms of Service and Privacy Policy.
+            </p>
+        </div>
+    </main>
+
+    <script>
+        // If already logged in, redirect away from auth page
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                var params = new URLSearchParams(window.location.search);
+                var redirect = params.get('redirect') || '/';
+                window.location.href = redirect;
+            }
+        });
+
+        // Log page view
+        logPageView('auth');
+
+        // --- Tab Switching ---
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginTab').className = 'flex-1 py-2.5 px-4 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg text-sm';
+            document.getElementById('signupTab').className = 'flex-1 py-2.5 px-4 rounded-xl font-semibold transition-all duration-300 bg-white/10 text-gray-300 hover:bg-white/20 text-sm';
+            clearError();
+        }
+
+        function showSignupForm() {
+            document.getElementById('signupForm').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupTab').className = 'flex-1 py-2.5 px-4 rounded-xl font-semibold transition-all duration-300 bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg text-sm';
+            document.getElementById('loginTab').className = 'flex-1 py-2.5 px-4 rounded-xl font-semibold transition-all duration-300 bg-white/10 text-gray-300 hover:bg-white/20 text-sm';
+            clearError();
+        }
+
+        // --- Email/Password Login ---
+        function loginWithEmail(e) {
+            e.preventDefault();
+            var email = document.getElementById('loginEmail').value;
+            var password = document.getElementById('loginPassword').value;
+            clearError();
+            setButtonLoading('loginBtn', true);
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(function(cred) {
+                    ensureUserDocument(cred.user);
+                    analytics.logEvent('login', { method: 'email' });
+                })
+                .catch(function(error) {
+                    showError(mapFirebaseError(error.code));
+                    setButtonLoading('loginBtn', false);
+                });
+        }
+
+        // --- Email/Password Signup ---
+        function signupWithEmail(e) {
+            e.preventDefault();
+            var email = document.getElementById('signupEmail').value;
+            var password = document.getElementById('signupPassword').value;
+            var confirm = document.getElementById('signupConfirm').value;
+            clearError();
+
+            if (password !== confirm) {
+                showError('Passwords do not match.');
+                return;
+            }
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters.');
+                return;
+            }
+
+            setButtonLoading('signupBtn', true);
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(function(cred) {
+                    ensureUserDocument(cred.user);
+                    analytics.logEvent('sign_up', { method: 'email' });
+                })
+                .catch(function(error) {
+                    showError(mapFirebaseError(error.code));
+                    setButtonLoading('signupBtn', false);
+                });
+        }
+
+        // --- Google Sign-In ---
+        function signInWithGoogle() {
+            clearError();
+            setButtonLoading('googleBtn', true);
+            var provider = new firebase.auth.GoogleAuthProvider();
+
+            auth.signInWithPopup(provider)
+                .then(function(result) {
+                    ensureUserDocument(result.user);
+                    analytics.logEvent('login', { method: 'google' });
+                })
+                .catch(function(error) {
+                    showError(mapFirebaseError(error.code));
+                    setButtonLoading('googleBtn', false);
+                });
+        }
+
+        // --- Error Handling ---
+        function showError(message) {
+            var el = document.getElementById('authError');
+            el.textContent = message;
+            el.classList.remove('hidden');
+        }
+
+        function clearError() {
+            var el = document.getElementById('authError');
+            el.textContent = '';
+            el.classList.add('hidden');
+        }
+
+        function mapFirebaseError(code) {
+            var map = {
+                'auth/user-not-found': 'No account found with this email.',
+                'auth/wrong-password': 'Incorrect password.',
+                'auth/email-already-in-use': 'An account with this email already exists.',
+                'auth/weak-password': 'Password must be at least 6 characters.',
+                'auth/invalid-email': 'Please enter a valid email address.',
+                'auth/popup-closed-by-user': 'Sign-in popup was closed. Please try again.',
+                'auth/network-request-failed': 'Network error. Please check your connection.',
+                'auth/too-many-requests': 'Too many attempts. Please try again later.',
+                'auth/invalid-credential': 'Invalid email or password. Please try again.'
+            };
+            return map[code] || 'An error occurred. Please try again.';
+        }
+
+        // --- Button Loading State ---
+        function setButtonLoading(btnId, loading) {
+            var btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.disabled = loading;
+            if (loading) {
+                btn.style.opacity = '0.7';
+                btn.style.cursor = 'wait';
+            } else {
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        }
+    </script>
+</body>
+</html>

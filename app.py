@@ -2,8 +2,12 @@ import json
 import os
 import tempfile
 import gc
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
+
+load_dotenv()
+
 from tone_classifier_wrapper import ToneCraftClassifier
 import torch
 import torchaudio
@@ -147,6 +151,33 @@ def tonecraft_page():
 def stemflow_page():
     """Serve the StemFlow stem separation page"""
     return send_from_directory('.', 'stemflow.html')
+
+@app.route('/auth.html')
+def auth_page():
+    """Serve the authentication page"""
+    return send_from_directory('.', 'auth.html')
+
+@app.route('/js/firebase-config.js')
+def firebase_config():
+    """Serve Firebase config from environment variables (keeps secrets out of source code)"""
+    js = f"""// Firebase configuration loaded from server environment variables
+const firebaseConfig = {{
+    apiKey: "{os.environ.get('FIREBASE_API_KEY', '')}",
+    authDomain: "{os.environ.get('FIREBASE_AUTH_DOMAIN', '')}",
+    projectId: "{os.environ.get('FIREBASE_PROJECT_ID', '')}",
+    storageBucket: "{os.environ.get('FIREBASE_STORAGE_BUCKET', '')}",
+    messagingSenderId: "{os.environ.get('FIREBASE_MESSAGING_SENDER_ID', '')}",
+    appId: "{os.environ.get('FIREBASE_APP_ID', '')}",
+    measurementId: "{os.environ.get('FIREBASE_MEASUREMENT_ID', '')}"
+}};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+const analytics = firebase.analytics();
+"""
+    return js, 200, {'Content-Type': 'application/javascript'}
 
 @app.route('/health')
 def health_check():

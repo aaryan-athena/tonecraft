@@ -21,6 +21,14 @@
             }
         }
     </script>
+    <!-- Firebase SDK (compat mode) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+    <script src="/js/firebase-config.js"></script>
+    <script src="/static/js/auth.js"></script>
+
     <style>
         * { font-family: 'Inter', sans-serif; }
         
@@ -153,6 +161,7 @@
                     <a href="/stemflow.html" class="px-3 py-2 md:px-5 md:py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg font-semibold transition-all text-xs md:text-sm whitespace-nowrap">
                         StemFlow
                     </a>
+                    <div id="auth-nav-slot"></div>
                 </div>
             </div>
         </div>
@@ -752,6 +761,12 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Initialize auth state listener (no auth guard for landing page)
+        initAuthStateListener(false);
+        logPageView('home');
+    </script>
 
 </body>
 </html>
