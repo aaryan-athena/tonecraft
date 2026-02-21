@@ -510,7 +510,7 @@
                         </p>
                         
                         <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-                            <a href="/download/plugin" class="group px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold text-lg transition-all shadow-xl hover:shadow-orange-500/40 flex items-center space-x-3">
+                            <a href="#" onclick="handlePluginDownload(event)" class="group px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold text-lg transition-all shadow-xl hover:shadow-orange-500/40 flex items-center space-x-3">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                 </svg>
@@ -766,6 +766,15 @@
         // Initialize auth state listener (no auth guard for landing page)
         initAuthStateListener(false);
         logPageView('home');
+
+        function handlePluginDownload(event) {
+            event.preventDefault();
+            if (auth.currentUser) {
+                window.location.href = '/download/plugin';
+            } else {
+                window.location.href = '/auth.html?redirect=/download/plugin';
+            }
+        }
     </script>
 
 </body>
